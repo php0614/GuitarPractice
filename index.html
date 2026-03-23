@@ -262,27 +262,38 @@ class AudioEngine {
     this.seqPatterns = {}; this.seqTracks = TRACK_INFO;
     this.seqOnStep = null; this.seqOwner = null;
     this._nextStepTime = 0; this._timerID = null;
-    this._scheduleAheadTime = 0.1; this._lookAhead = 25;
+    this._scheduleAheadTime = 0.15; this._lookAhead = 25;
   }
   initContext() {
     if (this.ctx) {
-      if (this.ctx.state === 'suspended') this.ctx.resume();
+      if (this.ctx.state === 'suspended') this.ctx.resume().catch(console.error);
       return;
     }
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) {
+        if (statusDisplay) statusDisplay.textContent = "Web Audio not supported";
+        return;
+      }
       this.ctx = new AudioCtx();
       console.log("AudioContext created, state:", this.ctx.state);
       this.unlock();
+      
+      // Monitor state changes
+      this.ctx.onstatechange = () => {
+        console.log("AudioContext state change:", this.ctx.state);
+        if (this.ctx.state === 'interrupted') this.ctx.resume().catch(console.error);
+      };
     } catch (e) { console.error("Could not init AudioContext:", e); }
   }
   async loadBuffers() {
     if (this.isLoaded || !this.ctx) return;
     for (const t of TRACK_INFO) {
       try {
+        console.log(`Fetching ${t.file}...`);
         const resp = await fetch(t.file);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const ab = await resp.arrayBuffer();
-        // Modern decodeAudioData returns a promise, but we handle the callback for older Safari
         this.buffers[t.name] = await new Promise((resolve, reject) => {
           this.ctx.decodeAudioData(ab, resolve, (err) => {
             console.error(`Error decoding ${t.file}`, err);
@@ -297,24 +308,24 @@ class AudioEngine {
   unlock() {
     if (!this.ctx) return;
     // Standard iOS unlock: play a silent buffer synchronously
-    const buf = this.ctx.createBuffer(1, 1, 22050);
-    const src = this.ctx.createBufferSource();
-    src.buffer = buf; src.connect(this.ctx.destination);
-    src.start(0);
-    if (this.ctx.state === 'suspended') this.ctx.resume();
+    const buffer = this.ctx.createBuffer(1, 1, 22050);
+    const source = this.ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(this.ctx.destination);
+    source.start(0);
+    if (this.ctx.state === 'suspended') this.ctx.resume().catch(console.error);
   }
   _playSample(name, time, envDur) {
     const buf = this.buffers[name]; if (!buf) return;
     const src = this.ctx.createBufferSource(); src.buffer = buf;
+    const now = Math.max(time, this.ctx.currentTime);
     if (envDur > 0) {
       const g = this.ctx.createGain(); g.connect(this.ctx.destination);
-      // More robust envelope for Safari
-      const now = time;
       g.gain.setValueAtTime(0, now);
       g.gain.linearRampToValueAtTime(1, now + 0.005);
       g.gain.setTargetAtTime(0.001, now + 0.005, envDur / 3);
-      src.connect(g); src.start(now); src.stop(now + envDur + 0.1);
-    } else { src.connect(this.ctx.destination); src.start(time); }
+      src.connect(g); src.start(now); src.stop(now + envDur + 0.2);
+    } else { src.connect(this.ctx.destination); src.start(now); }
   }
   _getStepDuration(step) {
     if (!this.seqOwner) return 0.125;
@@ -323,7 +334,12 @@ class AudioEngine {
     return step % 2 === 0 ? s16 * 2 * sr : s16 * 2 * (1 - sr);
   }
   _scheduler() {
-    if (!this.ctx) return;
+    if (!this.ctx || this.ctx.state !== 'running') {
+      if (this.ctx && this.ctx.state === 'suspended' && this.seqPlaying) {
+        this.ctx.resume().catch(console.error);
+      }
+      return;
+    }
     while (this._nextStepTime < this.ctx.currentTime + this._scheduleAheadTime) {
       const step = this.seqStep;
       const s16 = this.seqOwner ? this.seqOwner.getSixteenthDuration() : 0.125;
@@ -341,8 +357,8 @@ class AudioEngine {
     }
   }
   startSequencer(step = 0) {
+    this.initContext();
     if (!this.ctx) return;
-    if (this.ctx.state === 'suspended') this.ctx.resume();
     this.seqStep = step;
     this._nextStepTime = this.ctx.currentTime + 0.05;
     this.seqPlaying = true;
@@ -425,14 +441,13 @@ function buildGrid() {
       btn.addEventListener('click', () => {
         const st = parseInt(btn.dataset.step), tn = btn.dataset.track;
         patterns[tn][st] = !patterns[tn][st]; btn.classList.toggle('active', patterns[tn][st]);
-        engine.initContext(); // Unlock on interaction
+        engine.initContext();
       });
       td.appendChild(btn); tr.appendChild(td); buttons.push(btn);
     }
     table.appendChild(tr); stepButtons.push(buttons);
   }
   gridContainer.appendChild(table);
-  // Update collapsible max-height
   const secBody = $('sequencerSection');
   if (secBody && !secBody.classList.contains('collapsed')) secBody.style.maxHeight = secBody.scrollHeight + 200 + 'px';
 }
@@ -454,7 +469,7 @@ function stopPlayback() { currentStep = engine.seqStep; engine.stopSequencer(); 
 
 async function ensureAudio() {
   engine.initContext();
-  if (engine.ctx && engine.ctx.state === 'suspended') await engine.ctx.resume();
+  if (engine.ctx && engine.ctx.state === 'suspended') await engine.ctx.resume().catch(console.error);
   if (!engine.isLoaded) {
     statusDisplay.textContent = "Loading audio...";
     await engine.loadBuffers();
@@ -463,17 +478,16 @@ async function ensureAudio() {
 }
 
 // Global unlock listener for iOS
+const unlockAll = () => {
+  engine.initContext();
+  if (!engine.isLoaded) engine.loadBuffers();
+};
 ['click', 'touchstart', 'mousedown'].forEach(evt => {
-  window.addEventListener(evt, () => {
-    if (engine.ctx) {
-      if (engine.ctx.state === 'suspended') engine.ctx.resume();
-      engine.unlock();
-    }
-  }, { once: true });
+  window.addEventListener(evt, unlockAll, { once: true });
 });
 
 startBtn.addEventListener('click', async () => {
-  engine.initContext(); // Synchronous call in event handler
+  engine.initContext();
   await ensureAudio();
   if (playing && !paused) { paused = true; stopPlayback(); startBtn.innerHTML = '&#9654;'; }
   else if (paused) { paused = false; syncEngineOwner(); startPlayback(); startBtn.innerHTML = '&#9208;'; }
