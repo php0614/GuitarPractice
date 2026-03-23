@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>[Music] Guitar Practice</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { background: #1A1A2E; color: #E0E0E0; font-family: -apple-system, 'Segoe UI', sans-serif; font-size: 13px; overflow-x: hidden; }
+.app { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; padding: 8px; gap: 6px; }
+
+/* ── Collapsible Sections ─────────────────────────── */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  background: #252545; border-radius: 8px; padding: 8px 12px; cursor: pointer;
+  font-weight: bold; font-size: 13px; color: #CCC; user-select: none;
+}
+.section-header .arrow { transition: transform 0.2s; font-size: 10px; }
+.section-header.collapsed .arrow { transform: rotate(-90deg); }
+.section-body { overflow: hidden; transition: max-height 0.3s ease; }
+.section-body.collapsed { max-height: 0 !important; }
+
+/* ── Practice Display (always visible, top) ────────── */
+.display-frame {
+  background: #12122A; border: 2px solid #333; border-radius: 12px;
+  min-height: 160px; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 16px; flex-shrink: 0;
+}
+.note-display { color: #FFD700; font-size: 56px; font-weight: bold; line-height: 1.1; }
+.extra-display { color: #00CED1; font-size: 22px; font-weight: bold; margin-top: 2px; }
+.status-display { color: #888; font-size: 14px; margin-top: 6px; }
+
+/* ── Mode Buttons ────────────────────────────────── */
+.mode-row { display: flex; gap: 6px; }
+.mode-btn {
+  flex: 1; background: #2A2A3E; color: #E0E0E0; border: 2px solid #555; border-radius: 8px;
+  font-size: 12px; font-weight: bold; height: 40px; cursor: pointer;
+}
+.mode-btn:active { background: #3A3A5E; }
+.mode-btn.active { background: #3A2A1E; border-color: #FF6B35; color: #FFD700; }
+
+/* ── Slider Rows ─────────────────────────────────── */
+.slider-row { display: flex; align-items: center; gap: 8px; }
+.slider-row label { font-size: 12px; white-space: nowrap; min-width: 55px; color: #CCC; }
+.slider-row input[type="range"] { flex: 1; height: 6px; accent-color: #FF6B35; }
+.slider-row .val { width: 30px; text-align: center; font-size: 12px; }
+
+/* ── Control Rows ────────────────────────────────── */
+.control-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.control-row label { color: #CCC; font-size: 12px; }
+input[type="number"] {
+  background: #2A2A3E; color: #E0E0E0; border: 1px solid #555; border-radius: 6px;
+  padding: 4px 6px; font-size: 13px; width: 64px; height: 30px;
+}
+select {
+  background: #2A2A3E; color: #E0E0E0; border: 1px solid #555; border-radius: 6px;
+  padding: 4px; font-size: 13px; height: 30px;
+}
+.checkbox-label { display: flex; align-items: center; gap: 4px; color: #CCC; font-size: 12px; cursor: pointer; }
+.checkbox-label input[type="checkbox"] { accent-color: #FF6B35; width: 18px; height: 18px; }
+
+/* ── Step Grid ───────────────────────────────────── */
+.grid-container { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+.grid-table { border-spacing: 2px; }
+.grid-table td { padding: 0; }
+.track-label { font-weight: bold; font-size: 9px; width: 32px; white-space: nowrap; }
+.step-num { color: #666; font-size: 7px; text-align: center; width: 22px; }
+.grid-gap { width: 4px; }
+.step-btn {
+  width: 22px; height: 22px; border: 1px solid #444; border-radius: 3px;
+  background: #222238; cursor: pointer; padding: 0;
+}
+.step-btn.downbeat { background: #3D3D58; border-color: #777; }
+.step-btn.beat { background: #2F2F48; border-color: #606080; }
+.step-btn.active { border-color: var(--track-color); background: var(--track-color); }
+.step-btn.current:not(.active) { background: #4A4A6E; border-color: #7A7AAA; }
+.step-btn.current.downbeat:not(.active) { background: #5A5A7A; border-color: #9A9ABB; }
+.step-btn.current.beat:not(.active) { background: #50506E; border-color: #8888AA; }
+.step-btn.active.current { background: #FFD700; border-color: #FFF; }
+
+/* ── Transport ───────────────────────────────────── */
+.transport { display: flex; gap: 8px; }
+.transport-btn {
+  flex: 1; background: #2A2A3E; color: #E0E0E0; border: 1px solid #555; border-radius: 8px;
+  font-size: 16px; font-weight: bold; height: 40px; cursor: pointer;
+}
+.transport-btn:active { background: #3A3A5E; }
+
+/* ── Presets ──────────────────────────────────────── */
+.preset-save-row { display: flex; gap: 4px; margin-bottom: 4px; }
+.preset-save-row input[type="text"] {
+  flex: 1; background: #2A2A3E; color: #E0E0E0; border: 1px solid #555;
+  border-radius: 6px; padding: 4px 8px; font-size: 12px; height: 30px;
+}
+.preset-save-row input[type="text"]:focus { border-color: #FF6B35; outline: none; }
+.preset-btn {
+  background: #2A2A3E; color: #E0E0E0; border: 1px solid #555; border-radius: 6px;
+  font-size: 11px; font-weight: bold; padding: 0 12px; height: 30px; cursor: pointer;
+}
+.preset-btn:active { background: #3A3A5E; }
+.preset-list {
+  background: #2A2A3E; border: 1px solid #555; border-radius: 6px;
+  max-height: 80px; overflow-y: auto; font-size: 12px; margin-bottom: 4px;
+}
+.preset-item { padding: 6px 8px; cursor: pointer; }
+.preset-item:active { background: #353550; }
+.preset-item.selected { background: #4A4A6E; color: #FFD700; }
+.preset-actions { display: flex; gap: 4px; }
+
+.spacer { flex: 1; }
+.inner-section { display: flex; flex-direction: column; gap: 6px; padding: 8px 0; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Practice Display (always visible) -->
+  <div class="display-frame">
+    <div class="note-display" id="noteDisplay"></div>
+    <div class="extra-display" id="extraDisplay"></div>
+    <div class="status-display" id="statusDisplay"></div>
+  </div>
+
+  <!-- Mode + Transport row -->
+  <div class="mode-row">
+    <button class="mode-btn" id="noteModeBtn">Note</button>
+    <button class="mode-btn" id="cagedModeBtn">CAGED</button>
+    <button class="mode-btn" id="chordModeBtn">Chord</button>
+  </div>
+  <div class="transport">
+    <button class="transport-btn" id="startBtn">&#9654;</button>
+    <button class="transport-btn" id="stopBtn">&#9632;</button>
+  </div>
+
+  <!-- Practice Settings (collapsible) -->
+  <div class="section-header" data-section="practice">
+    Practice Settings <span class="arrow">&#9660;</span>
+  </div>
+  <div class="section-body" id="practiceSection">
+    <div class="inner-section">
+      <div class="slider-row">
+        <label>Pre-roll:</label>
+        <input type="range" id="prerollSlider" min="0" max="8" value="5">
+        <span class="val" id="prerollVal">5</span>
+      </div>
+      <div class="slider-row">
+        <label>Beats:</label>
+        <input type="range" id="beatRepeatSlider" min="1" max="16" value="8">
+        <span class="val" id="beatRepeatVal">8</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sequencer (collapsible) -->
+  <div class="section-header" data-section="sequencer">
+    Sequencer <span class="arrow">&#9660;</span>
+  </div>
+  <div class="section-body" id="sequencerSection">
+    <div class="inner-section">
+      <div class="control-row">
+        <label>BPM:</label>
+        <input type="number" id="bpmSpin" min="60" max="200" step="0.1" value="70.0">
+        <input type="range" id="bpmSlider" style="flex:1; height:6px; accent-color:#FF6B35;" min="600" max="2000" value="700">
+      </div>
+      <div class="control-row">
+        <label class="checkbox-label"><input type="checkbox" id="dtCheck"> 2x</label>
+        <label>Meter:</label>
+        <select id="meterCombo">
+          <option>4/4</option><option>3/4</option><option>5/4</option>
+          <option>6/8</option><option>9/8</option><option>12/8</option>
+        </select>
+        <label>Swing:</label>
+        <input type="range" id="swingSlider" style="flex:1; height:6px; accent-color:#FF6B35;" min="0" max="100" value="50">
+        <span class="val" id="swingVal">50%</span>
+      </div>
+      <div class="grid-container" id="gridContainer"></div>
+    </div>
+  </div>
+
+  <!-- Presets (collapsible) -->
+  <div class="section-header collapsed" data-section="presets">
+    Presets <span class="arrow">&#9660;</span>
+  </div>
+  <div class="section-body collapsed" id="presetsSection">
+    <div class="inner-section">
+      <div class="preset-save-row">
+        <input type="text" id="presetNameEdit" placeholder="Name...">
+        <button class="preset-btn" id="saveBtn">Save</button>
+      </div>
+      <div class="preset-list" id="presetList"></div>
+      <div class="preset-actions">
+        <button class="preset-btn" id="loadBtn">Load</button>
+        <button class="preset-btn" id="deleteBtn">Del</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Collapsible sections ───────────────────────────────────────────
+document.querySelectorAll('.section-header').forEach(header => {
+  header.addEventListener('click', () => {
+    header.classList.toggle('collapsed');
+    const sectionId = header.dataset.section + 'Section';
+    document.getElementById(sectionId).classList.toggle('collapsed');
+  });
+});
+// Set max-height for open sections after layout
+requestAnimationFrame(() => {
+  document.querySelectorAll('.section-body:not(.collapsed)').forEach(el => {
+    el.style.maxHeight = el.scrollHeight + 200 + 'px';
+  });
+});
+
+// ── Constants ──────────────────────────────────────────────────────
+const TRACK_INFO = [
+  { name: "O-Hat", file: "percAudio/o-hat.wav", envMult: 3.0, color: "#00CED1" },
+  { name: "C-Hat", file: "percAudio/c-hat.wav", envMult: 0.8, color: "#32CD32" },
+  { name: "Snare", file: "percAudio/snare.wav", envMult: 1.5, color: "#4169E1" },
+  { name: "Kick",  file: "percAudio/kick.wav",  envMult: 2.0, color: "#FF6347" },
+];
+
+const METER_CONFIG = {
+  "4/4":  { steps: 16, group: 4 },
+  "3/4":  { steps: 12, group: 3 },
+  "5/4":  { steps: 20, group: 4 },
+  "6/8":  { steps: 12, group: 3 },
+  "9/8":  { steps: 18, group: 3 },
+  "12/8": { steps: 24, group: 3 },
+};
+
+const DEFAULT_BEAT_INTERVAL = {
+  "4/4": 4, "3/4": 3, "5/4": 4, "6/8": 6, "9/8": 9, "12/8": 12,
+};
+
+const CHROMATIC = ["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"];
+const PRACTICE_NOTES = [...CHROMATIC];
+const CAGED_FORMS = ["C form","A form","G form","E form","D form"];
+const CHORD_TYPES = ["Maj7","Min7","7","Maj9","Min9","9","m11","13","7#9","7b9"];
+
+const ROOTLESS_MAP = {
+  "Maj7": [4,"m7"], "Min7": [3,"Maj7"], "7": [4,"dim"],
+  "Maj9": [4,"m7"], "Min9": [3,"Maj7"], "9": [4,"m7b5"],
+  "m11": [3,"Maj9"], "13": [7,"m6/9"], "7#9": [4,"dim7"], "7b9": [4,"dim7"],
+};
+
+function transposeNote(note, semitones) {
+  const enh = {"Db":"C#","D#":"Eb","Gb":"F#","G#":"Ab","A#":"Bb"};
+  const idx = CHROMATIC.indexOf(enh[note] || note);
+  return CHROMATIC[(idx + semitones) % 12];
+}
+function getRootlessChord(root, ct) {
+  const [s, q] = ROOTLESS_MAP[ct];
+  return transposeNote(root, s) + q;
+}
+
+// ── Audio Engine (Web Audio API) ───────────────────────────────────
+class AudioEngine {
+  constructor() {
+    this.ctx = null; this.buffers = {};
+    this.seqPlaying = false; this.seqStep = 0; this.seqNumSteps = 16;
+    this.seqPatterns = {}; this.seqTracks = TRACK_INFO;
+    this.seqOnStep = null; this.seqOwner = null;
+    this._nextStepTime = 0; this._timerID = null;
+    this._scheduleAheadTime = 0.1; this._lookAhead = 25;
+  }
+  async init() {
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    for (const t of TRACK_INFO) {
+      try {
+        const resp = await fetch(t.file);
+        const ab = await resp.arrayBuffer();
+        this.buffers[t.name] = await this.ctx.decodeAudioData(ab);
+      } catch (e) { console.warn(`Could not load ${t.file}:`, e); }
+    }
+  }
+  _playSample(name, time, envDur) {
+    const buf = this.buffers[name]; if (!buf) return;
+    const src = this.ctx.createBufferSource(); src.buffer = buf;
+    if (envDur > 0) {
+      const g = this.ctx.createGain(); g.connect(this.ctx.destination);
+      g.gain.setValueAtTime(0, time);
+      g.gain.linearRampToValueAtTime(1, time + 0.002);
+      g.gain.setValueAtTime(1, time + 0.002);
+      g.gain.exponentialRampToValueAtTime(0.001, time + envDur);
+      src.connect(g); src.start(time); src.stop(time + envDur);
+    } else { src.connect(this.ctx.destination); src.start(time); }
+  }
+  _getStepDuration(step) {
+    if (!this.seqOwner) return 0.125;
+    const s16 = this.seqOwner.getSixteenthDuration();
+    const sr = this.seqOwner.swing / 100.0;
+    return step % 2 === 0 ? s16 * 2 * sr : s16 * 2 * (1 - sr);
+  }
+  _scheduler() {
+    while (this._nextStepTime < this.ctx.currentTime + this._scheduleAheadTime) {
+      const step = this.seqStep;
+      const s16 = this.seqOwner ? this.seqOwner.getSixteenthDuration() : 0.125;
+      for (const track of this.seqTracks) {
+        const pat = this.seqPatterns[track.name];
+        if (pat && step < pat.length && pat[step])
+          this._playSample(track.name, this._nextStepTime, track.envMult * s16);
+      }
+      if (this.seqOnStep) {
+        const s = step, delay = Math.max(0, (this._nextStepTime - this.ctx.currentTime) * 1000);
+        setTimeout(() => this.seqOnStep(s), delay);
+      }
+      this._nextStepTime += this._getStepDuration(step);
+      this.seqStep = (step + 1) % this.seqNumSteps;
+    }
+  }
+  startSequencer(step = 0) {
+    if (!this.ctx) return;
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    this.seqStep = step;
+    this._nextStepTime = this.ctx.currentTime + 0.05;
+    this.seqPlaying = true;
+    this._timerID = setInterval(() => this._scheduler(), this._lookAhead);
+  }
+  stopSequencer() {
+    this.seqPlaying = false;
+    if (this._timerID !== null) { clearInterval(this._timerID); this._timerID = null; }
+  }
+}
+
+// ── App State ──────────────────────────────────────────────────────
+const engine = new AudioEngine();
+let bpm = 70.0, doubleTime = false, meter = "4/4", swing = 50;
+let playing = false, paused = false, currentStep = 0, prevHighlight = -1;
+let patterns = {}; for (const t of TRACK_INFO) patterns[t.name] = new Array(24).fill(false);
+let practiceMode = null, prerollValue = 5, beatRepeatValue = 8;
+let kickCounter = 0, prerollDone = false, currentNote = "", currentExtra = "";
+let presets = [{
+  name: "TakeFive", bpm: "172.0", double_time: "0", meter: "5/4", swing: "50",
+  "O-Hat": "10001010100000000000", "C-Hat": "00000000000010001000",
+  "Snare": "00000000000000000000", "Kick": "10001000100010001000",
+}];
+let selectedPresetIdx = -1, stepButtons = [];
+
+// ── DOM refs ───────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const bpmSpin = $('bpmSpin'), bpmSlider = $('bpmSlider'), dtCheck = $('dtCheck');
+const meterCombo = $('meterCombo'), swingSlider = $('swingSlider'), swingVal = $('swingVal');
+const gridContainer = $('gridContainer'), startBtn = $('startBtn'), stopBtn = $('stopBtn');
+const presetNameEdit = $('presetNameEdit'), presetList = $('presetList');
+const noteDisplay = $('noteDisplay'), extraDisplay = $('extraDisplay'), statusDisplay = $('statusDisplay');
+const noteModeBtn = $('noteModeBtn'), cagedModeBtn = $('cagedModeBtn'), chordModeBtn = $('chordModeBtn');
+const prerollSlider = $('prerollSlider'), prerollValEl = $('prerollVal');
+const beatRepeatSlider = $('beatRepeatSlider'), beatRepeatValEl = $('beatRepeatVal');
+
+// ── Helpers ────────────────────────────────────────────────────────
+function getSixteenthDuration() {
+  let b = bpm; if (doubleTime) b *= 2;
+  return meter.endsWith("/8") ? 60.0 / (b * 6) : 60.0 / (b * 4);
+}
+function applyDefaultPatterns() {
+  const n = METER_CONFIG[meter].steps;
+  for (const t of TRACK_INFO) patterns[t.name] = new Array(24).fill(false);
+  if (meter === "4/4") { patterns["Kick"][0] = true; patterns["Kick"][8] = true; }
+  else { const iv = DEFAULT_BEAT_INTERVAL[meter]; for (let s = 0; s < n; s += iv) patterns["Kick"][s] = true; }
+}
+function patternToStr(tn, n) { return patterns[tn].slice(0, n).map(v => v ? "1" : "0").join(""); }
+function strToPattern(s) { const p = s.split("").map(c => c === "1"); while (p.length < 24) p.push(false); return p; }
+
+// ── Build Grid ─────────────────────────────────────────────────────
+function buildGrid() {
+  gridContainer.innerHTML = ""; stepButtons = [];
+  const cfg = METER_CONFIG[meter], numSteps = cfg.steps, gs = cfg.group;
+  const bi = DEFAULT_BEAT_INTERVAL[meter];
+  const table = document.createElement('table'); table.className = 'grid-table';
+
+  // Header
+  const hr = document.createElement('tr');
+  hr.appendChild(document.createElement('td'));
+  for (let s = 0; s < numSteps; s++) {
+    if (s > 0 && s % gs === 0) { const g = document.createElement('td'); g.className = 'grid-gap'; hr.appendChild(g); }
+    const td = document.createElement('td'); td.className = 'step-num'; td.textContent = s + 1; hr.appendChild(td);
+  }
+  table.appendChild(hr);
+
+  for (let row = 0; row < TRACK_INFO.length; row++) {
+    const track = TRACK_INFO[row], tr = document.createElement('tr');
+    const ltd = document.createElement('td'); ltd.className = 'track-label'; ltd.style.color = track.color; ltd.textContent = track.name; tr.appendChild(ltd);
+    const buttons = [];
+    for (let s = 0; s < numSteps; s++) {
+      if (s > 0 && s % gs === 0) { const g = document.createElement('td'); g.className = 'grid-gap'; tr.appendChild(g); }
+      const td = document.createElement('td'), btn = document.createElement('button');
+      btn.className = 'step-btn'; btn.style.setProperty('--track-color', track.color);
+      if (s === 0) btn.classList.add('downbeat');
+      else if (s % bi === 0) btn.classList.add('beat');
+      if (patterns[track.name][s]) btn.classList.add('active');
+      btn.dataset.track = track.name; btn.dataset.step = s;
+      btn.addEventListener('click', () => {
+        const st = parseInt(btn.dataset.step), tn = btn.dataset.track;
+        patterns[tn][st] = !patterns[tn][st]; btn.classList.toggle('active', patterns[tn][st]);
+      });
+      td.appendChild(btn); tr.appendChild(td); buttons.push(btn);
+    }
+    table.appendChild(tr); stepButtons.push(buttons);
+  }
+  gridContainer.appendChild(table);
+  // Update collapsible max-height
+  const secBody = $('sequencerSection');
+  if (!secBody.classList.contains('collapsed')) secBody.style.maxHeight = secBody.scrollHeight + 200 + 'px';
+}
+
+// ── Highlight ──────────────────────────────────────────────────────
+function onStepUpdate(step) {
+  const n = METER_CONFIG[meter].steps;
+  if (prevHighlight >= 0 && prevHighlight < n) for (const r of stepButtons) if (prevHighlight < r.length) r[prevHighlight].classList.remove('current');
+  if (step >= 0 && step < n) for (const r of stepButtons) if (step < r.length) r[step].classList.add('current');
+  prevHighlight = step;
+  if (step < patterns["Kick"].length && patterns["Kick"][step]) onKickHit();
+}
+function clearHighlight() { for (const r of stepButtons) for (const b of r) b.classList.remove('current'); prevHighlight = -1; }
+
+// ── Transport ──────────────────────────────────────────────────────
+function syncEngineOwner() { engine.seqOwner = { getSixteenthDuration, swing }; engine.seqOnStep = onStepUpdate; engine.seqPatterns = patterns; }
+function startPlayback() { playing = true; engine.seqNumSteps = METER_CONFIG[meter].steps; syncEngineOwner(); engine.startSequencer(currentStep); }
+function stopPlayback() { currentStep = engine.seqStep; engine.stopSequencer(); }
+
+startBtn.addEventListener('click', async () => {
+  if (!engine.ctx) await engine.init();
+  if (playing && !paused) { paused = true; stopPlayback(); startBtn.innerHTML = '&#9654;'; }
+  else if (paused) { paused = false; syncEngineOwner(); startPlayback(); startBtn.innerHTML = '&#9208;'; }
+  else { currentStep = 0; startPlayback(); startBtn.innerHTML = '&#9208;'; }
+});
+stopBtn.addEventListener('click', () => {
+  stopPlayback(); currentStep = 0; playing = false; paused = false;
+  startBtn.innerHTML = '&#9654;'; clearHighlight(); stopPractice();
+});
+
+// ── Practice Modes ─────────────────────────────────────────────────
+function randNote(exc) { const c = PRACTICE_NOTES.filter(n => n !== exc); return c[Math.floor(Math.random() * c.length)]; }
+function pickNewContent() {
+  if (practiceMode === "note") { currentNote = randNote(currentNote); noteDisplay.textContent = currentNote; extraDisplay.textContent = ""; statusDisplay.textContent = ""; }
+  else if (practiceMode === "caged") { currentNote = randNote(currentNote); currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; statusDisplay.textContent = ""; }
+  else if (practiceMode === "chord") { const r = PRACTICE_NOTES[Math.floor(Math.random() * PRACTICE_NOTES.length)], ct = CHORD_TYPES[Math.floor(Math.random() * CHORD_TYPES.length)]; currentNote = r + ct; currentExtra = "= " + getRootlessChord(r, ct); noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; statusDisplay.textContent = ""; }
+}
+function onKickHit() {
+  if (!practiceMode) return; kickCounter++;
+  if (!prerollDone) { const rem = prerollValue - kickCounter; if (rem <= 0) { prerollDone = true; kickCounter = 0; pickNewContent(); } else statusDisplay.textContent = `Pre-roll: ${rem}`; return; }
+  if (practiceMode === "note") { if (kickCounter >= beatRepeatValue) { kickCounter = 0; pickNewContent(); } }
+  else if (practiceMode === "caged") {
+    const half = Math.max(1, Math.floor((beatRepeatValue + 1) / 2));
+    if (kickCounter === half) { currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; extraDisplay.textContent = currentExtra; }
+    if (kickCounter >= beatRepeatValue) { kickCounter = 0; currentNote = randNote(currentNote); currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; }
+  } else if (practiceMode === "chord") { if (kickCounter >= beatRepeatValue) { kickCounter = 0; pickNewContent(); } }
+}
+function stopPractice() {
+  practiceMode = null; kickCounter = 0; prerollDone = false; currentNote = ""; currentExtra = "";
+  noteDisplay.textContent = ""; extraDisplay.textContent = ""; statusDisplay.textContent = "";
+  noteModeBtn.classList.remove('active'); cagedModeBtn.classList.remove('active'); chordModeBtn.classList.remove('active');
+}
+async function onMode(mode) {
+  if (!engine.ctx) await engine.init();
+  if (practiceMode === mode) { stopPractice(); stopPlayback(); currentStep = 0; playing = false; paused = false; startBtn.innerHTML = '&#9654;'; clearHighlight(); return; }
+  stopPlayback(); clearHighlight();
+  practiceMode = mode; kickCounter = 0; prerollDone = (prerollValue === 0); currentNote = ""; currentExtra = "";
+  noteModeBtn.classList.toggle('active', mode === "note"); cagedModeBtn.classList.toggle('active', mode === "caged"); chordModeBtn.classList.toggle('active', mode === "chord");
+  if (!prerollDone) { noteDisplay.textContent = ""; extraDisplay.textContent = ""; statusDisplay.textContent = `Pre-roll: ${prerollValue}`; } else pickNewContent();
+  currentStep = 0; playing = true; paused = false; startBtn.innerHTML = '&#9208;';
+  engine.seqNumSteps = METER_CONFIG[meter].steps; syncEngineOwner(); engine.startSequencer(0);
+}
+noteModeBtn.addEventListener('click', () => onMode("note"));
+cagedModeBtn.addEventListener('click', () => onMode("caged"));
+chordModeBtn.addEventListener('click', () => onMode("chord"));
+
+// ── Controls ───────────────────────────────────────────────────────
+bpmSpin.addEventListener('input', () => { bpm = parseFloat(bpmSpin.value) || 70; bpmSlider.value = Math.round(bpm * 10); });
+bpmSlider.addEventListener('input', () => { bpm = parseInt(bpmSlider.value) / 10.0; bpmSpin.value = bpm.toFixed(1); });
+dtCheck.addEventListener('change', () => { doubleTime = dtCheck.checked; });
+meterCombo.addEventListener('change', () => {
+  if (playing) { stopPlayback(); playing = false; paused = false; startBtn.innerHTML = '&#9654;'; }
+  stopPractice(); meter = meterCombo.value; engine.seqNumSteps = METER_CONFIG[meter].steps;
+  currentStep = 0; prevHighlight = -1; applyDefaultPatterns(); buildGrid();
+});
+swingSlider.addEventListener('input', () => { swing = parseInt(swingSlider.value); swingVal.textContent = swing + '%'; });
+prerollSlider.addEventListener('input', () => { prerollValue = parseInt(prerollSlider.value); prerollValEl.textContent = prerollValue; });
+beatRepeatSlider.addEventListener('input', () => { beatRepeatValue = parseInt(beatRepeatSlider.value); beatRepeatValEl.textContent = beatRepeatValue; });
+
+// ── Presets ────────────────────────────────────────────────────────
+function refreshPresetList() {
+  presetList.innerHTML = ''; selectedPresetIdx = -1;
+  presets.forEach((p, i) => {
+    const div = document.createElement('div'); div.className = 'preset-item'; div.textContent = p.name;
+    div.addEventListener('click', () => { document.querySelectorAll('.preset-item').forEach(el => el.classList.remove('selected')); div.classList.add('selected'); selectedPresetIdx = i; });
+    div.addEventListener('dblclick', () => loadPreset(i));
+    presetList.appendChild(div);
+  });
+}
+function loadPreset(idx) {
+  if (idx < 0 || idx >= presets.length) return; const p = presets[idx];
+  if (playing) { stopPlayback(); currentStep = 0; playing = false; paused = false; startBtn.innerHTML = '&#9654;'; clearHighlight(); stopPractice(); }
+  bpm = parseFloat(p.bpm); bpmSpin.value = bpm.toFixed(1); bpmSlider.value = Math.round(bpm * 10);
+  doubleTime = p.double_time === "1"; dtCheck.checked = doubleTime;
+  swing = parseInt(p.swing); swingSlider.value = swing; swingVal.textContent = swing + '%';
+  meter = p.meter; meterCombo.value = meter;
+  for (const t of TRACK_INFO) patterns[t.name] = p[t.name] ? strToPattern(p[t.name]) : new Array(24).fill(false);
+  currentStep = 0; prevHighlight = -1; engine.seqNumSteps = METER_CONFIG[meter].steps; buildGrid();
+}
+$('saveBtn').addEventListener('click', () => {
+  const name = presetNameEdit.value.trim(); if (!name) return;
+  const n = METER_CONFIG[meter].steps, row = { name, bpm: String(bpm), double_time: doubleTime ? "1" : "0", meter, swing: String(swing) };
+  for (const t of TRACK_INFO) row[t.name] = patternToStr(t.name, n);
+  presets = presets.filter(p => p.name !== name); presets.push(row); refreshPresetList(); presetNameEdit.value = '';
+});
+$('loadBtn').addEventListener('click', () => loadPreset(selectedPresetIdx));
+$('deleteBtn').addEventListener('click', () => { if (selectedPresetIdx >= 0 && selectedPresetIdx < presets.length) { presets.splice(selectedPresetIdx, 1); refreshPresetList(); } });
+
+// ── Init ───────────────────────────────────────────────────────────
+applyDefaultPatterns(); buildGrid(); refreshPresetList();
+</script>
+</body>
+</html>
