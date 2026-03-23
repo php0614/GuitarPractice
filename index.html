@@ -265,20 +265,30 @@ class AudioEngine {
     this._scheduleAheadTime = 0.1; this._lookAhead = 25;
   }
   initContext() {
-    if (this.ctx) return;
+    if (this.ctx) {
+      if (this.ctx.state === 'suspended') this.ctx.resume();
+      return;
+    }
     try {
-      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      this.ctx = new AudioCtx();
+      console.log("AudioContext created, state:", this.ctx.state);
       this.unlock();
-      console.log("AudioContext initialized:", this.ctx.state);
     } catch (e) { console.error("Could not init AudioContext:", e); }
   }
   async loadBuffers() {
-    if (this.isLoaded) return;
+    if (this.isLoaded || !this.ctx) return;
     for (const t of TRACK_INFO) {
       try {
         const resp = await fetch(t.file);
         const ab = await resp.arrayBuffer();
-        this.buffers[t.name] = await this.ctx.decodeAudioData(ab);
+        // Modern decodeAudioData returns a promise, but we handle the callback for older Safari
+        this.buffers[t.name] = await new Promise((resolve, reject) => {
+          this.ctx.decodeAudioData(ab, resolve, (err) => {
+            console.error(`Error decoding ${t.file}`, err);
+            reject(err);
+          });
+        });
         console.log(`Loaded ${t.name}`);
       } catch (e) { console.warn(`Could not load ${t.file}:`, e); }
     }
@@ -286,7 +296,7 @@ class AudioEngine {
   }
   unlock() {
     if (!this.ctx) return;
-    // Standard iOS unlock: play a silent buffer
+    // Standard iOS unlock: play a silent buffer synchronously
     const buf = this.ctx.createBuffer(1, 1, 22050);
     const src = this.ctx.createBufferSource();
     src.buffer = buf; src.connect(this.ctx.destination);
@@ -298,11 +308,12 @@ class AudioEngine {
     const src = this.ctx.createBufferSource(); src.buffer = buf;
     if (envDur > 0) {
       const g = this.ctx.createGain(); g.connect(this.ctx.destination);
-      g.gain.setValueAtTime(0, time);
-      g.gain.linearRampToValueAtTime(1, time + 0.002);
-      g.gain.setValueAtTime(1, time + 0.002);
-      g.gain.exponentialRampToValueAtTime(0.001, time + envDur);
-      src.connect(g); src.start(time); src.stop(time + envDur);
+      // More robust envelope for Safari
+      const now = time;
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(1, now + 0.005);
+      g.gain.setTargetAtTime(0.001, now + 0.005, envDur / 3);
+      src.connect(g); src.start(now); src.stop(now + envDur + 0.1);
     } else { src.connect(this.ctx.destination); src.start(time); }
   }
   _getStepDuration(step) {
@@ -312,6 +323,7 @@ class AudioEngine {
     return step % 2 === 0 ? s16 * 2 * sr : s16 * 2 * (1 - sr);
   }
   _scheduler() {
+    if (!this.ctx) return;
     while (this._nextStepTime < this.ctx.currentTime + this._scheduleAheadTime) {
       const step = this.seqStep;
       const s16 = this.seqOwner ? this.seqOwner.getSixteenthDuration() : 0.125;
@@ -334,6 +346,7 @@ class AudioEngine {
     this.seqStep = step;
     this._nextStepTime = this.ctx.currentTime + 0.05;
     this.seqPlaying = true;
+    if (this._timerID) clearInterval(this._timerID);
     this._timerID = setInterval(() => this._scheduler(), this._lookAhead);
   }
   stopSequencer() {
@@ -412,6 +425,7 @@ function buildGrid() {
       btn.addEventListener('click', () => {
         const st = parseInt(btn.dataset.step), tn = btn.dataset.track;
         patterns[tn][st] = !patterns[tn][st]; btn.classList.toggle('active', patterns[tn][st]);
+        engine.initContext(); // Unlock on interaction
       });
       td.appendChild(btn); tr.appendChild(td); buttons.push(btn);
     }
@@ -420,7 +434,7 @@ function buildGrid() {
   gridContainer.appendChild(table);
   // Update collapsible max-height
   const secBody = $('sequencerSection');
-  if (!secBody.classList.contains('collapsed')) secBody.style.maxHeight = secBody.scrollHeight + 200 + 'px';
+  if (secBody && !secBody.classList.contains('collapsed')) secBody.style.maxHeight = secBody.scrollHeight + 200 + 'px';
 }
 
 // ── Highlight ──────────────────────────────────────────────────────
@@ -440,7 +454,7 @@ function stopPlayback() { currentStep = engine.seqStep; engine.stopSequencer(); 
 
 async function ensureAudio() {
   engine.initContext();
-  if (engine.ctx.state === 'suspended') await engine.ctx.resume();
+  if (engine.ctx && engine.ctx.state === 'suspended') await engine.ctx.resume();
   if (!engine.isLoaded) {
     statusDisplay.textContent = "Loading audio...";
     await engine.loadBuffers();
@@ -448,13 +462,25 @@ async function ensureAudio() {
   }
 }
 
+// Global unlock listener for iOS
+['click', 'touchstart', 'mousedown'].forEach(evt => {
+  window.addEventListener(evt, () => {
+    if (engine.ctx) {
+      if (engine.ctx.state === 'suspended') engine.ctx.resume();
+      engine.unlock();
+    }
+  }, { once: true });
+});
+
 startBtn.addEventListener('click', async () => {
+  engine.initContext(); // Synchronous call in event handler
   await ensureAudio();
   if (playing && !paused) { paused = true; stopPlayback(); startBtn.innerHTML = '&#9654;'; }
   else if (paused) { paused = false; syncEngineOwner(); startPlayback(); startBtn.innerHTML = '&#9208;'; }
   else { currentStep = 0; startPlayback(); startBtn.innerHTML = '&#9208;'; }
 });
 stopBtn.addEventListener('click', () => {
+  engine.initContext();
   stopPlayback(); currentStep = 0; playing = false; paused = false;
   startBtn.innerHTML = '&#9654;'; clearHighlight(); stopPractice();
 });
