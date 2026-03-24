@@ -298,6 +298,13 @@ class AudioEngine {
       if (navigator.audioSession) {
         navigator.audioSession.type = "playback";
       }
+      // Force iOS to route audio through loudspeaker instead of earpiece.
+      // Playing a silent <audio> element switches AVAudioSession to playback
+      // routing, which Web Audio API then inherits.
+      try {
+        const silent = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA");
+        silent.play().catch(() => {});
+      } catch (e) {}
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtx) {
         if (statusDisplay) statusDisplay.textContent = "Web Audio not supported";
