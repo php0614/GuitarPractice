@@ -30,6 +30,11 @@ body { background: #1A1A2E; color: #E0E0E0; font-family: -apple-system, 'Segoe U
 .extra-display { color: #00CED1; font-size: 22px; font-weight: bold; margin-top: 2px; }
 .status-display { color: #888; font-size: 14px; margin-top: 6px; }
 
+/* ── Staff Notation ──────────────────────────────── */
+.display-content { display: flex; align-items: center; gap: 16px; justify-content: center; }
+.note-text-col { display: flex; flex-direction: column; align-items: center; }
+#staffCanvas { flex-shrink: 0; }
+
 /* ── Mode Buttons ────────────────────────────────── */
 .mode-row { display: flex; gap: 6px; }
 .mode-btn {
@@ -124,8 +129,13 @@ select {
 
   <!-- Practice Display (always visible) -->
   <div class="display-frame">
-    <div class="note-display" id="noteDisplay"></div>
-    <div class="extra-display" id="extraDisplay"></div>
+    <div class="display-content">
+      <div class="note-text-col">
+        <div class="note-display" id="noteDisplay"></div>
+        <div class="extra-display" id="extraDisplay"></div>
+      </div>
+      <canvas id="staffCanvas"></canvas>
+    </div>
     <div class="status-display" id="statusDisplay"></div>
   </div>
 
@@ -398,6 +408,77 @@ class AudioEngine {
   }
 }
 
+// ── Staff Notation Canvas ──────────────────────────────────────────
+const STAFF_W = 150, STAFF_H = 100;
+function initStaffCanvas() {
+  const canvas = document.getElementById('staffCanvas');
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = STAFF_W * dpr; canvas.height = STAFF_H * dpr;
+  canvas.style.width = STAFF_W + 'px'; canvas.style.height = STAFF_H + 'px';
+  canvas.getContext('2d').scale(dpr, dpr);
+}
+function drawStaffCanvas(noteStr) {
+  const canvas = document.getElementById('staffCanvas');
+  if (!canvas) return;
+  const c = canvas.getContext('2d');
+  c.clearRect(0, 0, STAFF_W, STAFF_H);
+  const lineSpacing = STAFF_H / 8;
+  const midY = STAFF_H / 2;           // y of middle line (B4)
+  const staffLeft = STAFF_W * 0.24, staffRight = STAFF_W * 0.97;
+  const staffColor = '#888', noteColor = '#FFD700';
+  // 5 staff lines (positions -4..+4 in steps of 2; unit = lineSpacing/2)
+  c.strokeStyle = staffColor; c.lineWidth = 1;
+  for (let i = -2; i <= 2; i++) {
+    const y = midY - i * lineSpacing;
+    c.beginPath(); c.moveTo(staffLeft, y); c.lineTo(staffRight, y); c.stroke();
+  }
+  // Treble clef glyph
+  c.fillStyle = staffColor;
+  c.font = (lineSpacing * 5) + 'px serif';
+  c.textAlign = 'left'; c.textBaseline = 'middle';
+  c.fillText('\u{1D11E}', STAFF_W * 0.01, midY - lineSpacing * 0.5);
+  if (!noteStr) return;
+  const match = noteStr.match(/^([A-G][#b]?)/);
+  if (!match) return;
+  const root = match[1];
+  // pos = diatonic staff position in half-line-spacing units from B4(0)
+  // Staff lines: E4=-4, G4=-2, B4=0, D5=+2, F5=+4
+  const ND = {
+    'C':{pos:-6,acc:''},'C#':{pos:-6,acc:'#'},'Db':{pos:-5,acc:'b'},
+    'D':{pos:-5,acc:''},'D#':{pos:-5,acc:'#'},'Eb':{pos:-4,acc:'b'},
+    'E':{pos:-4,acc:''},'F':{pos:-3,acc:''},'F#':{pos:-3,acc:'#'},
+    'Gb':{pos:-2,acc:'b'},'G':{pos:-2,acc:''},'G#':{pos:-2,acc:'#'},
+    'Ab':{pos:-1,acc:'b'},'A':{pos:-1,acc:''},'A#':{pos:-1,acc:'#'},
+    'Bb':{pos:0,acc:'b'},'B':{pos:0,acc:''}
+  };
+  const nd = ND[root]; if (!nd) return;
+  const unit = lineSpacing / 2;
+  const noteX = STAFF_W * 0.70, noteY = midY - nd.pos * unit;
+  const rx = lineSpacing * 0.58, ry = lineSpacing * 0.40;
+  // Ledger lines below staff (even pos <= -6) or above (+6)
+  c.strokeStyle = staffColor; c.lineWidth = 1;
+  const lpad = rx * 1.6;
+  for (let p = -6; p >= nd.pos; p -= 2) { const y = midY - p * unit; c.beginPath(); c.moveTo(noteX-lpad,y); c.lineTo(noteX+lpad,y); c.stroke(); }
+  for (let p =  6; p <= nd.pos; p += 2) { const y = midY - p * unit; c.beginPath(); c.moveTo(noteX-lpad,y); c.lineTo(noteX+lpad,y); c.stroke(); }
+  // Note head
+  c.fillStyle = noteColor;
+  c.beginPath(); c.ellipse(noteX, noteY, rx, ry, -0.25, 0, Math.PI*2); c.fill();
+  // Stem (up if below middle, down if at/above)
+  c.strokeStyle = noteColor; c.lineWidth = 1.5;
+  c.beginPath();
+  if (nd.pos >= 0) { c.moveTo(noteX-rx+1, noteY); c.lineTo(noteX-rx+1, noteY + lineSpacing*3.5); }
+  else             { c.moveTo(noteX+rx-1, noteY); c.lineTo(noteX+rx-1, noteY - lineSpacing*3.5); }
+  c.stroke();
+  // Accidental
+  if (nd.acc) {
+    c.fillStyle = noteColor;
+    c.font = 'bold ' + (lineSpacing*1.6) + 'px serif';
+    c.textAlign = 'right'; c.textBaseline = 'middle';
+    c.fillText(nd.acc === '#' ? '\u266F' : '\u266D', noteX - rx - 3, noteY);
+  }
+}
+
 // ── App State ──────────────────────────────────────────────────────
 const engine = new AudioEngine();
 let bpm = 70.0, doubleTime = false, meter = "4/4", swing = 50;
@@ -587,6 +668,7 @@ function pickNewContent() {
   if (practiceMode === "note") { currentNote = randNote(currentNote); noteDisplay.textContent = currentNote; extraDisplay.textContent = ""; statusDisplay.textContent = ""; }
   else if (practiceMode === "caged") { currentNote = randNote(currentNote); currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; statusDisplay.textContent = ""; }
   else if (practiceMode === "chord") { const r = PRACTICE_NOTES[Math.floor(Math.random() * PRACTICE_NOTES.length)], ct = CHORD_TYPES[Math.floor(Math.random() * CHORD_TYPES.length)]; currentNote = r + ct; currentExtra = "= " + getRootlessChord(r, ct); noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; statusDisplay.textContent = ""; }
+  drawStaffCanvas(currentNote);
 }
 function onKickHit() {
   if (!practiceMode) return; kickCounter++;
@@ -595,13 +677,14 @@ function onKickHit() {
   else if (practiceMode === "caged") {
     const half = Math.max(1, Math.floor((beatRepeatValue + 1) / 2));
     if (kickCounter === half) { currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; extraDisplay.textContent = currentExtra; }
-    if (kickCounter >= beatRepeatValue) { kickCounter = 0; currentNote = randNote(currentNote); currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; }
+    if (kickCounter >= beatRepeatValue) { kickCounter = 0; currentNote = randNote(currentNote); currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; drawStaffCanvas(currentNote); }
   } else if (practiceMode === "chord") { if (kickCounter >= beatRepeatValue) { kickCounter = 0; pickNewContent(); } }
 }
 function stopPractice() {
   practiceMode = null; kickCounter = 0; prerollDone = false; currentNote = ""; currentExtra = "";
   noteDisplay.textContent = ""; extraDisplay.textContent = ""; statusDisplay.textContent = "";
   noteModeBtn.classList.remove('active'); cagedModeBtn.classList.remove('active'); chordModeBtn.classList.remove('active');
+  drawStaffCanvas("");
 }
 async function onMode(mode) {
   engine.initContext(); // synchronous unlock within user gesture
@@ -661,7 +744,7 @@ $('loadBtn').addEventListener('click', () => loadPreset(selectedPresetIdx));
 $('deleteBtn').addEventListener('click', () => { if (selectedPresetIdx >= 0 && selectedPresetIdx < presets.length) { presets.splice(selectedPresetIdx, 1); refreshPresetList(); } });
 
 // ── Init ───────────────────────────────────────────────────────────
-applyDefaultPatterns(); buildGrid(); refreshPresetList();
+applyDefaultPatterns(); buildGrid(); refreshPresetList(); initStaffCanvas();
 </script>
 </body>
 </html>
