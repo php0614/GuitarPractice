@@ -288,22 +288,21 @@ class AudioEngine {
   }
   async loadBuffers() {
     if (this.isLoaded || !this.ctx) return;
+    let anyLoaded = false;
     for (const t of TRACK_INFO) {
       try {
         console.log(`Fetching ${t.file}...`);
         const resp = await fetch(t.file);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const ab = await resp.arrayBuffer();
-        this.buffers[t.name] = await new Promise((resolve, reject) => {
-          this.ctx.decodeAudioData(ab, resolve, (err) => {
-            console.error(`Error decoding ${t.file}`, err);
-            reject(err);
-          });
-        });
+        // Use Promise-based decodeAudioData for better iOS compatibility
+        this.buffers[t.name] = await this.ctx.decodeAudioData(ab);
         console.log(`Loaded ${t.name}`);
+        anyLoaded = true;
       } catch (e) { console.warn(`Could not load ${t.file}:`, e); }
     }
-    this.isLoaded = true;
+    // Only mark loaded if at least one buffer succeeded; allows retry on failure
+    if (anyLoaded) this.isLoaded = true;
   }
   unlock() {
     if (!this.ctx) return;
@@ -470,24 +469,23 @@ function stopPlayback() { currentStep = engine.seqStep; engine.stopSequencer(); 
 async function ensureAudio() {
   engine.initContext();
   if (engine.ctx && engine.ctx.state === 'suspended') await engine.ctx.resume().catch(console.error);
-  if (!engine.isLoaded) engine.loadBuffers(); // load in background, don't block sequencer start
+  // Wait for buffers AFTER context is running — on iOS, decodeAudioData can silently
+  // fail when the context is still suspended, leaving all buffers null forever.
+  if (!engine.isLoaded) await engine.loadBuffers();
 }
 
-// Global unlock listener for iOS
-const unlockAll = () => {
-  engine.initContext();
-  if (!engine.isLoaded) engine.loadBuffers();
-};
+// Global unlock listener for iOS — only init context, do NOT loadBuffers here
+// (context may still be suspended when this fires; loading happens in ensureAudio)
+const unlockAll = () => { engine.initContext(); };
 ['click', 'touchstart', 'mousedown'].forEach(evt => {
   window.addEventListener(evt, unlockAll, { once: true });
 });
 
-// touchstart on key buttons ensures AudioContext is unlocked synchronously on iOS
+// touchstart on key buttons: init + resume synchronously within the user gesture
 [startBtn, noteModeBtn, cagedModeBtn, chordModeBtn].forEach(btn => {
   btn.addEventListener('touchstart', () => {
     engine.initContext();
     if (engine.ctx && engine.ctx.state === 'suspended') engine.ctx.resume().catch(console.error);
-    if (!engine.isLoaded) engine.loadBuffers();
   }, { passive: true });
 });
 
