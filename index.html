@@ -295,6 +295,9 @@ class AudioEngine {
       return;
     }
     try {
+      if (navigator.audioSession) {
+        navigator.audioSession.type = "playback";
+      }
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtx) {
         if (statusDisplay) statusDisplay.textContent = "Web Audio not supported";
@@ -565,7 +568,10 @@ sineBtn.addEventListener('click', () => { playSineWave(); });
 
 // Global unlock: keep firing on every interaction so a context that iOS silently
 // suspended (e.g. after screen lock) gets resumed on the next user touch.
-const unlockAll = () => { engine.initContext(); };
+const unlockAll = () => {
+  engine.initContext();
+  if (engine.ctx && engine.ctx.state === 'suspended') engine.ctx.resume().catch(console.error);
+};
 ['touchstart', 'click'].forEach(evt => {
   window.addEventListener(evt, unlockAll, { passive: true });
 });
