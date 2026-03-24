@@ -278,6 +278,72 @@ function getRootlessChord(root, ct) {
   return transposeNote(root, s) + q;
 }
 
+// ── Multi-note staff helpers ────────────────────────────────────────
+const _CHROM_S = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const _CHROM_F = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
+const _CHROM_B = ["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"]; // app base
+const _FLAT_ROOTS = new Set(['F','Bb','Eb','Ab']);
+const _ENH = {"Db":"C#","D#":"Eb","Gb":"F#","G#":"Ab","A#":"Bb"};
+// Returns {noteName, octaveOffset} for root+semitones; quality: 'M'=major,'m'=minor,'P'=perfect,'A'=aug
+function _intervalNote(root, semitones, quality) {
+  const norm = _ENH[root] || root;
+  const rootIdx = _CHROM_B.indexOf(norm);
+  const useFlat = quality === 'm' ? true : quality === 'A' ? false : _FLAT_ROOTS.has(norm);
+  const chrom = useFlat ? _CHROM_F : _CHROM_S;
+  const absPos = rootIdx + semitones;
+  return { noteName: chrom[((absPos % 12) + 12) % 12], octaveOffset: Math.floor(absPos / 12) };
+}
+const _BASE_ND = {
+  'C':{pos:-6,acc:''},'C#':{pos:-6,acc:'#'},'Db':{pos:-5,acc:'b'},
+  'D':{pos:-5,acc:''},'D#':{pos:-5,acc:'#'},'Eb':{pos:-4,acc:'b'},
+  'E':{pos:-4,acc:''},'F':{pos:-3,acc:''},'F#':{pos:-3,acc:'#'},
+  'Gb':{pos:-2,acc:'b'},'G':{pos:-2,acc:''},'G#':{pos:-2,acc:'#'},
+  'Ab':{pos:-1,acc:'b'},'A':{pos:-1,acc:''},'A#':{pos:-1,acc:'#'},
+  'Bb':{pos:0,acc:'b'},'B':{pos:0,acc:''}
+};
+function _noteDesc(noteName, octaveOffset) {
+  const nd = _BASE_ND[noteName]; if (!nd) return null;
+  return { pos: nd.pos + octaveOffset * 7, acc: nd.acc };
+}
+
+// CAGED: C/G form = root,maj3rd,octave; A/E/D form = 5thBelow,root,maj3rd
+const CAGED_NOTE_INTERVALS = {
+  'C form': [{s:0,q:'P'},{s:4,q:'M'},{s:12,q:'P'}],
+  'A form': [{s:-5,q:'P'},{s:0,q:'P'},{s:4,q:'M'}],
+  'G form': [{s:0,q:'P'},{s:4,q:'M'},{s:12,q:'P'}],
+  'E form': [{s:-5,q:'P'},{s:0,q:'P'},{s:4,q:'M'}],
+  'D form': [{s:-5,q:'P'},{s:0,q:'P'},{s:4,q:'M'}],
+};
+// Chord tones without root (from bottom)
+const CHORD_NOTE_INTERVALS = {
+  'Maj7': [{s:4,q:'M'},{s:7,q:'P'},{s:11,q:'M'}],
+  'Min7': [{s:3,q:'m'},{s:7,q:'P'},{s:10,q:'m'}],
+  '7':    [{s:4,q:'M'},{s:7,q:'P'},{s:10,q:'m'}],
+  'Maj9': [{s:4,q:'M'},{s:7,q:'P'},{s:11,q:'M'},{s:14,q:'M'}],
+  'Min9': [{s:3,q:'m'},{s:7,q:'P'},{s:10,q:'m'},{s:14,q:'M'}],
+  '9':    [{s:4,q:'M'},{s:7,q:'P'},{s:10,q:'m'},{s:14,q:'M'}],
+  'm11':  [{s:3,q:'m'},{s:7,q:'P'},{s:10,q:'m'},{s:14,q:'M'},{s:17,q:'P'}],
+  '13':   [{s:4,q:'M'},{s:7,q:'P'},{s:10,q:'m'},{s:14,q:'M'},{s:21,q:'M'}],
+  '7#9':  [{s:4,q:'M'},{s:7,q:'P'},{s:10,q:'m'},{s:15,q:'A'}],
+  '7b9':  [{s:4,q:'M'},{s:7,q:'P'},{s:10,q:'m'},{s:13,q:'m'}],
+};
+function getCagedNoteDescs(root, form) {
+  return (CAGED_NOTE_INTERVALS[form]||[]).map(({s,q})=>{
+    const {noteName,octaveOffset}=_intervalNote(root,s,q);
+    return _noteDesc(noteName,octaveOffset);
+  }).filter(Boolean);
+}
+function getChordNoteDescs(root, chordType) {
+  const descs = (CHORD_NOTE_INTERVALS[chordType]||[]).map(({s,q})=>{
+    const {noteName,octaveOffset}=_intervalNote(root,s,q);
+    return _noteDesc(noteName,octaveOffset);
+  }).filter(Boolean);
+  // If lowest note is above middle of staff, shift down one octave to keep notes displayable
+  const minPos = descs.length ? Math.min(...descs.map(d=>d.pos)) : 0;
+  const shift = minPos > 0 ? -7 : 0;
+  return shift ? descs.map(d=>({pos:d.pos+shift, acc:d.acc})) : descs;
+}
+
 // ── Audio Engine (Web Audio API) ───────────────────────────────────
 class AudioEngine {
   constructor() {
@@ -409,7 +475,7 @@ class AudioEngine {
 }
 
 // ── Staff Notation Canvas ──────────────────────────────────────────
-const STAFF_W = 150, STAFF_H = 100;
+const STAFF_W = 150, STAFF_H = 120;
 function initStaffCanvas() {
   const canvas = document.getElementById('staffCanvas');
   if (!canvas) return;
@@ -418,65 +484,74 @@ function initStaffCanvas() {
   canvas.style.width = STAFF_W + 'px'; canvas.style.height = STAFF_H + 'px';
   canvas.getContext('2d').scale(dpr, dpr);
 }
-function drawStaffCanvas(noteStr) {
+// input: note name string (single note) OR array of {pos,acc} descriptors OR falsy (clear)
+function drawStaffCanvas(input) {
   const canvas = document.getElementById('staffCanvas');
   if (!canvas) return;
   const c = canvas.getContext('2d');
   c.clearRect(0, 0, STAFF_W, STAFF_H);
   const lineSpacing = STAFF_H / 8;
-  const midY = STAFF_H / 2;           // y of middle line (B4)
+  const midY = STAFF_H / 2;
   const staffLeft = STAFF_W * 0.24, staffRight = STAFF_W * 0.97;
   const staffColor = '#888', noteColor = '#FFD700';
-  // 5 staff lines (positions -4..+4 in steps of 2; unit = lineSpacing/2)
   c.strokeStyle = staffColor; c.lineWidth = 1;
   for (let i = -2; i <= 2; i++) {
     const y = midY - i * lineSpacing;
     c.beginPath(); c.moveTo(staffLeft, y); c.lineTo(staffRight, y); c.stroke();
   }
-  // Treble clef glyph
   c.fillStyle = staffColor;
   c.font = (lineSpacing * 5) + 'px serif';
   c.textAlign = 'left'; c.textBaseline = 'middle';
   c.fillText('\u{1D11E}', STAFF_W * 0.01, midY - lineSpacing * 0.5);
-  if (!noteStr) return;
-  const match = noteStr.match(/^([A-G][#b]?)/);
-  if (!match) return;
-  const root = match[1];
-  // pos = diatonic staff position in half-line-spacing units from B4(0)
-  // Staff lines: E4=-4, G4=-2, B4=0, D5=+2, F5=+4
-  const ND = {
-    'C':{pos:-6,acc:''},'C#':{pos:-6,acc:'#'},'Db':{pos:-5,acc:'b'},
-    'D':{pos:-5,acc:''},'D#':{pos:-5,acc:'#'},'Eb':{pos:-4,acc:'b'},
-    'E':{pos:-4,acc:''},'F':{pos:-3,acc:''},'F#':{pos:-3,acc:'#'},
-    'Gb':{pos:-2,acc:'b'},'G':{pos:-2,acc:''},'G#':{pos:-2,acc:'#'},
-    'Ab':{pos:-1,acc:'b'},'A':{pos:-1,acc:''},'A#':{pos:-1,acc:'#'},
-    'Bb':{pos:0,acc:'b'},'B':{pos:0,acc:''}
-  };
-  const nd = ND[root]; if (!nd) return;
+  if (!input || (Array.isArray(input) && input.length === 0)) return;
+
+  // Resolve to array of {pos, acc}
+  let noteDescs;
+  if (Array.isArray(input)) {
+    noteDescs = input;
+  } else {
+    const match = ('' + input).match(/^([A-G][#b]?)/);
+    if (!match) return;
+    const nd = _BASE_ND[match[1]]; if (!nd) return;
+    noteDescs = [nd];
+  }
+
   const unit = lineSpacing / 2;
-  const noteX = STAFF_W * 0.70, noteY = midY - nd.pos * unit;
+  const noteX = STAFF_W * 0.70;
   const rx = lineSpacing * 0.58, ry = lineSpacing * 0.40;
-  // Ledger lines below staff (even pos <= -6) or above (+6)
-  c.strokeStyle = staffColor; c.lineWidth = 1;
   const lpad = rx * 1.6;
-  for (let p = -6; p >= nd.pos; p -= 2) { const y = midY - p * unit; c.beginPath(); c.moveTo(noteX-lpad,y); c.lineTo(noteX+lpad,y); c.stroke(); }
-  for (let p =  6; p <= nd.pos; p += 2) { const y = midY - p * unit; c.beginPath(); c.moveTo(noteX-lpad,y); c.lineTo(noteX+lpad,y); c.stroke(); }
-  // Note head
+  const positions = noteDescs.map(d => d.pos);
+  const minPos = Math.min(...positions), maxPos = Math.max(...positions);
+
+  // Ledger lines below staff (even pos <= -6) and above (even pos >= 6)
+  c.strokeStyle = staffColor; c.lineWidth = 1;
+  for (let p = -6; p >= minPos; p -= 2) { const y = midY - p * unit; c.beginPath(); c.moveTo(noteX-lpad,y); c.lineTo(noteX+lpad,y); c.stroke(); }
+  for (let p =  6; p <= maxPos; p += 2) { const y = midY - p * unit; c.beginPath(); c.moveTo(noteX-lpad,y); c.lineTo(noteX+lpad,y); c.stroke(); }
+
+  // Note heads and accidentals
   c.fillStyle = noteColor;
-  c.beginPath(); c.ellipse(noteX, noteY, rx, ry, -0.25, 0, Math.PI*2); c.fill();
-  // Stem (up if below middle, down if at/above)
+  for (const nd of noteDescs) {
+    const noteY = midY - nd.pos * unit;
+    c.beginPath(); c.ellipse(noteX, noteY, rx, ry, -0.25, 0, Math.PI*2); c.fill();
+    if (nd.acc) {
+      c.font = 'bold ' + (lineSpacing*1.6) + 'px serif';
+      c.textAlign = 'right'; c.textBaseline = 'middle';
+      c.fillText(nd.acc === '#' ? '\u266F' : '\u266D', noteX - rx - 3, noteY);
+    }
+  }
+
+  // Stem: up from highest note if avg below middle, else down from lowest
+  const avgPos = positions.reduce((a,b)=>a+b,0) / positions.length;
   c.strokeStyle = noteColor; c.lineWidth = 1.5;
   c.beginPath();
-  if (nd.pos >= 0) { c.moveTo(noteX-rx+1, noteY); c.lineTo(noteX-rx+1, noteY + lineSpacing*3.5); }
-  else             { c.moveTo(noteX+rx-1, noteY); c.lineTo(noteX+rx-1, noteY - lineSpacing*3.5); }
-  c.stroke();
-  // Accidental
-  if (nd.acc) {
-    c.fillStyle = noteColor;
-    c.font = 'bold ' + (lineSpacing*1.6) + 'px serif';
-    c.textAlign = 'right'; c.textBaseline = 'middle';
-    c.fillText(nd.acc === '#' ? '\u266F' : '\u266D', noteX - rx - 3, noteY);
+  if (avgPos < 0) {
+    const hy = midY - maxPos * unit;
+    c.moveTo(noteX+rx-1, hy); c.lineTo(noteX+rx-1, hy - lineSpacing*3.5);
+  } else {
+    const ly = midY - minPos * unit;
+    c.moveTo(noteX-rx+1, ly); c.lineTo(noteX-rx+1, ly + lineSpacing*3.5);
   }
+  c.stroke();
 }
 
 // ── App State ──────────────────────────────────────────────────────
@@ -664,11 +739,19 @@ stopBtn.addEventListener('click', () => {
 
 // ── Practice Modes ─────────────────────────────────────────────────
 function randNote(exc) { const c = PRACTICE_NOTES.filter(n => n !== exc); return c[Math.floor(Math.random() * c.length)]; }
+function drawPracticeStaff() {
+  if (practiceMode === "note") { drawStaffCanvas(currentNote); }
+  else if (practiceMode === "caged") { drawStaffCanvas(getCagedNoteDescs(currentNote, currentExtra)); }
+  else if (practiceMode === "chord") {
+    const m = currentNote.match(/^([A-G][#b]?)(.+)$/);
+    if (m) drawStaffCanvas(getChordNoteDescs(m[1], m[2]));
+  }
+}
 function pickNewContent() {
   if (practiceMode === "note") { currentNote = randNote(currentNote); noteDisplay.textContent = currentNote; extraDisplay.textContent = ""; statusDisplay.textContent = ""; }
   else if (practiceMode === "caged") { currentNote = randNote(currentNote); currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; statusDisplay.textContent = ""; }
   else if (practiceMode === "chord") { const r = PRACTICE_NOTES[Math.floor(Math.random() * PRACTICE_NOTES.length)], ct = CHORD_TYPES[Math.floor(Math.random() * CHORD_TYPES.length)]; currentNote = r + ct; currentExtra = "= " + getRootlessChord(r, ct); noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; statusDisplay.textContent = ""; }
-  drawStaffCanvas(currentNote);
+  drawPracticeStaff();
 }
 function onKickHit() {
   if (!practiceMode) return; kickCounter++;
@@ -676,8 +759,8 @@ function onKickHit() {
   if (practiceMode === "note") { if (kickCounter >= beatRepeatValue) { kickCounter = 0; pickNewContent(); } }
   else if (practiceMode === "caged") {
     const half = Math.max(1, Math.floor((beatRepeatValue + 1) / 2));
-    if (kickCounter === half) { currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; extraDisplay.textContent = currentExtra; }
-    if (kickCounter >= beatRepeatValue) { kickCounter = 0; currentNote = randNote(currentNote); currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; drawStaffCanvas(currentNote); }
+    if (kickCounter === half) { currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; extraDisplay.textContent = currentExtra; drawPracticeStaff(); }
+    if (kickCounter >= beatRepeatValue) { kickCounter = 0; currentNote = randNote(currentNote); currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; drawPracticeStaff(); }
   } else if (practiceMode === "chord") { if (kickCounter >= beatRepeatValue) { kickCounter = 0; pickNewContent(); } }
 }
 function stopPractice() {
