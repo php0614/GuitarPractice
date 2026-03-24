@@ -470,11 +470,7 @@ function stopPlayback() { currentStep = engine.seqStep; engine.stopSequencer(); 
 async function ensureAudio() {
   engine.initContext();
   if (engine.ctx && engine.ctx.state === 'suspended') await engine.ctx.resume().catch(console.error);
-  if (!engine.isLoaded) {
-    statusDisplay.textContent = "Loading audio...";
-    await engine.loadBuffers();
-    statusDisplay.textContent = "";
-  }
+  if (!engine.isLoaded) engine.loadBuffers(); // load in background, don't block sequencer start
 }
 
 // Global unlock listener for iOS
@@ -486,8 +482,16 @@ const unlockAll = () => {
   window.addEventListener(evt, unlockAll, { once: true });
 });
 
+// touchstart on key buttons ensures AudioContext is unlocked synchronously on iOS
+[startBtn, noteModeBtn, cagedModeBtn, chordModeBtn].forEach(btn => {
+  btn.addEventListener('touchstart', () => {
+    engine.initContext();
+    if (engine.ctx && engine.ctx.state === 'suspended') engine.ctx.resume().catch(console.error);
+    if (!engine.isLoaded) engine.loadBuffers();
+  }, { passive: true });
+});
+
 startBtn.addEventListener('click', async () => {
-  engine.initContext();
   await ensureAudio();
   if (playing && !paused) { paused = true; stopPlayback(); startBtn.innerHTML = '&#9654;'; }
   else if (paused) { paused = false; syncEngineOwner(); startPlayback(); startBtn.innerHTML = '&#9208;'; }
@@ -522,6 +526,7 @@ function stopPractice() {
   noteModeBtn.classList.remove('active'); cagedModeBtn.classList.remove('active'); chordModeBtn.classList.remove('active');
 }
 async function onMode(mode) {
+  engine.initContext(); // synchronous unlock within user gesture
   await ensureAudio();
   if (practiceMode === mode) { stopPractice(); stopPlayback(); currentStep = 0; playing = false; paused = false; startBtn.innerHTML = '&#9654;'; clearHighlight(); return; }
   stopPlayback(); clearHighlight();
