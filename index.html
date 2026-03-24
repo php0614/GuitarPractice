@@ -85,11 +85,6 @@ select {
   font-size: 16px; font-weight: bold; height: 40px; cursor: pointer;
 }
 .transport-btn:active { background: #3A3A5E; }
-#initBtn {
-  flex: none; width: 80px; font-size: 12px;
-  background: #1A3020; border-color: #3A7A50; color: #5CBA80;
-}
-#initBtn.ready { background: #1A2A30; border-color: #3A6A7A; color: #5CAABA; }
 /* ── Sine Wave Row ───────────────────────────────── */
 .sine-row { display: flex; align-items: center; gap: 8px; }
 .sine-row label { font-size: 12px; white-space: nowrap; min-width: 55px; color: #CCC; }
@@ -143,7 +138,6 @@ select {
   <div class="transport">
     <button class="transport-btn" id="startBtn">&#9654;</button>
     <button class="transport-btn" id="stopBtn">&#9632;</button>
-    <button class="transport-btn" id="initBtn">Init Audio</button>
   </div>
   <div class="sine-row">
     <label>Sine vol:</label>
@@ -423,7 +417,6 @@ const $ = id => document.getElementById(id);
 const bpmSpin = $('bpmSpin'), bpmSlider = $('bpmSlider'), dtCheck = $('dtCheck');
 const meterCombo = $('meterCombo'), swingSlider = $('swingSlider'), swingVal = $('swingVal');
 const gridContainer = $('gridContainer'), startBtn = $('startBtn'), stopBtn = $('stopBtn');
-const initBtn = $('initBtn');
 const sineSlider = $('sineSlider'), sineVal = $('sineVal'), sineBtn = $('sineBtn');
 const presetNameEdit = $('presetNameEdit'), presetList = $('presetList');
 const noteDisplay = $('noteDisplay'), extraDisplay = $('extraDisplay'), statusDisplay = $('statusDisplay');
@@ -507,23 +500,6 @@ async function ensureAudio() {
   if (engine.ctx && engine.ctx.state === 'suspended') await engine.ctx.resume().catch(console.error);
   await engine.loadBuffers();
 }
-
-// ── Init Audio Button ──────────────────────────────────────────────
-function markAudioReady() {
-  initBtn.textContent = 'Audio Ready';
-  initBtn.classList.add('ready');
-}
-// Synchronous resume within user gesture — critical for iOS
-initBtn.addEventListener('touchstart', () => {
-  engine.initContext();
-  if (engine.ctx && engine.ctx.state === 'suspended') engine.ctx.resume().catch(console.error);
-}, { passive: true });
-initBtn.addEventListener('click', async () => {
-  engine.initContext();
-  if (engine.ctx && engine.ctx.state === 'suspended') await engine.ctx.resume().catch(console.error);
-  await engine.loadBuffers();
-  if (engine.ctx && engine.ctx.state === 'running') markAudioReady();
-});
 
 // ── Sine Wave (440 Hz) ─────────────────────────────────────────────
 sineSlider.addEventListener('input', () => {
