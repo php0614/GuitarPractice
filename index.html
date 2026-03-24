@@ -85,6 +85,19 @@ select {
   font-size: 16px; font-weight: bold; height: 40px; cursor: pointer;
 }
 .transport-btn:active { background: #3A3A5E; }
+#initBtn {
+  flex: none; width: 80px; font-size: 12px;
+  background: #1A3020; border-color: #3A7A50; color: #5CBA80;
+}
+#initBtn.ready { background: #1A2A30; border-color: #3A6A7A; color: #5CAABA; }
+/* ── Sine Wave Row ───────────────────────────────── */
+.sine-row { display: flex; align-items: center; gap: 8px; }
+.sine-row label { font-size: 12px; white-space: nowrap; min-width: 55px; color: #CCC; }
+.sine-row input[type="range"] { flex: 1; height: 6px; accent-color: #FF6B35; }
+.sine-row .val { width: 32px; text-align: center; font-size: 12px; }
+#sineBtn { flex: none; width: 80px; height: 34px; font-size: 12px; font-weight: bold; background: #2A2A3E; color: #E0E0E0; border: 1px solid #555; border-radius: 8px; cursor: pointer; }
+#sineBtn:active { background: #3A3A5E; }
+#sineBtn.playing { background: #3A2A1E; border-color: #FF6B35; color: #FFD700; }
 
 /* ── Presets ──────────────────────────────────────── */
 .preset-save-row { display: flex; gap: 4px; margin-bottom: 4px; }
@@ -130,6 +143,13 @@ select {
   <div class="transport">
     <button class="transport-btn" id="startBtn">&#9654;</button>
     <button class="transport-btn" id="stopBtn">&#9632;</button>
+    <button class="transport-btn" id="initBtn">Init Audio</button>
+  </div>
+  <div class="sine-row">
+    <label>Sine vol:</label>
+    <input type="range" id="sineSlider" min="0" max="1" step="0.01" value="0.2">
+    <span class="val" id="sineVal">0.20</span>
+    <button id="sineBtn">440 Hz</button>
   </div>
 
   <!-- Practice Settings (collapsible) -->
@@ -393,6 +413,8 @@ const $ = id => document.getElementById(id);
 const bpmSpin = $('bpmSpin'), bpmSlider = $('bpmSlider'), dtCheck = $('dtCheck');
 const meterCombo = $('meterCombo'), swingSlider = $('swingSlider'), swingVal = $('swingVal');
 const gridContainer = $('gridContainer'), startBtn = $('startBtn'), stopBtn = $('stopBtn');
+const initBtn = $('initBtn');
+const sineSlider = $('sineSlider'), sineVal = $('sineVal'), sineBtn = $('sineBtn');
 const presetNameEdit = $('presetNameEdit'), presetList = $('presetList');
 const noteDisplay = $('noteDisplay'), extraDisplay = $('extraDisplay'), statusDisplay = $('statusDisplay');
 const noteModeBtn = $('noteModeBtn'), cagedModeBtn = $('cagedModeBtn'), chordModeBtn = $('chordModeBtn');
@@ -475,6 +497,71 @@ async function ensureAudio() {
   if (engine.ctx && engine.ctx.state === 'suspended') await engine.ctx.resume().catch(console.error);
   await engine.loadBuffers();
 }
+
+// ── Init Audio Button ──────────────────────────────────────────────
+function markAudioReady() {
+  initBtn.textContent = 'Audio Ready';
+  initBtn.classList.add('ready');
+}
+// Synchronous resume within user gesture — critical for iOS
+initBtn.addEventListener('touchstart', () => {
+  engine.initContext();
+  if (engine.ctx && engine.ctx.state === 'suspended') engine.ctx.resume().catch(console.error);
+}, { passive: true });
+initBtn.addEventListener('click', async () => {
+  engine.initContext();
+  if (engine.ctx && engine.ctx.state === 'suspended') await engine.ctx.resume().catch(console.error);
+  await engine.loadBuffers();
+  if (engine.ctx && engine.ctx.state === 'running') markAudioReady();
+});
+
+// ── Sine Wave (440 Hz) ─────────────────────────────────────────────
+sineSlider.addEventListener('input', () => {
+  sineVal.textContent = parseFloat(sineSlider.value).toFixed(2);
+});
+
+let _sineOsc = null, _sineGain = null;
+
+function playSineWave() {
+  if (!engine.ctx || engine.ctx.state !== 'running') return;
+  // Stop any existing tone
+  if (_sineOsc) { try { _sineOsc.stop(); } catch(e){} _sineOsc = null; }
+
+  const ctx = engine.ctx;
+  const now = ctx.currentTime;
+  const level = parseFloat(sineSlider.value);
+  const attackTime = 0.2;
+  const sustainEnd = 4.0;   // release starts here
+  const totalDur = 5.0;
+
+  const osc = ctx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(440, now);
+
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(level, now + attackTime);
+  // Hold at level until release starts
+  gain.gain.setValueAtTime(level, now + sustainEnd);
+  // Linear release: level → 0 over 1 second
+  gain.gain.linearRampToValueAtTime(0, now + totalDur);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + totalDur + 0.05);
+
+  _sineOsc = osc;
+  sineBtn.classList.add('playing');
+  osc.onended = () => { _sineOsc = null; sineBtn.classList.remove('playing'); };
+}
+
+// Synchronous resume for iOS on touchstart
+sineBtn.addEventListener('touchstart', () => {
+  engine.initContext();
+  if (engine.ctx && engine.ctx.state === 'suspended') engine.ctx.resume().catch(console.error);
+}, { passive: true });
+sineBtn.addEventListener('click', () => { playSineWave(); });
 
 // Global unlock: keep firing on every interaction so a context that iOS silently
 // suspended (e.g. after screen lock) gets resumed on the next user touch.
