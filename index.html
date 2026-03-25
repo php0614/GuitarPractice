@@ -122,6 +122,16 @@ select {
 
 .spacer { flex: 1; }
 .inner-section { display: flex; flex-direction: column; gap: 6px; padding: 8px 0; }
+
+/* ── Scale Toggles ───────────────────────────────── */
+.scale-toggles-grid {
+  display: flex; flex-wrap: wrap; gap: 4px 8px;
+}
+.scale-toggle-label {
+  display: flex; align-items: center; gap: 3px; color: #CCC; font-size: 11px; cursor: pointer;
+  white-space: nowrap;
+}
+.scale-toggle-label input[type="checkbox"] { accent-color: #FF6B35; width: 15px; height: 15px; }
 </style>
 </head>
 <body>
@@ -144,6 +154,7 @@ select {
     <button class="mode-btn" id="noteModeBtn">Note</button>
     <button class="mode-btn" id="cagedModeBtn">CAGED</button>
     <button class="mode-btn" id="chordModeBtn">Chord</button>
+    <button class="mode-btn" id="scaleModeBtn">Scale</button>
   </div>
   <div class="transport">
     <button class="transport-btn" id="startBtn">&#9654;</button>
@@ -219,6 +230,16 @@ select {
         <button class="preset-btn" id="loadBtn">Load</button>
         <button class="preset-btn" id="deleteBtn">Del</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Scale Toggles (collapsible) -->
+  <div class="section-header collapsed" data-section="scaleToggles">
+    Scale Toggles <span class="arrow">&#9660;</span>
+  </div>
+  <div class="section-body collapsed" id="scaleTogglesSection">
+    <div class="inner-section">
+      <div class="scale-toggles-grid" id="scaleTogglesGrid"></div>
     </div>
   </div>
 </div>
@@ -330,6 +351,25 @@ const CHORD_NOTE_INTERVALS = {
   '7#9':  [{s:4,q:'M'},{s:7,q:'P'},{s:10,q:'m'},{s:15,q:'A'}],
   '7b9':  [{s:4,q:'M'},{s:7,q:'P'},{s:10,q:'m'},{s:13,q:'m'}],
 };
+
+const SCALE_NAMES = ['Major','Minor','Major Pentatonic','Minor Pentatonic','Harmonic Minor','Melodic Minor','Dorian','Mixolydian','Lydian','Phrygian','Altered','Whole Tone','Diminished'];
+const SCALE_INTERVALS = {
+  'Major':            [{s:0,q:'P'},{s:2,q:'M'},{s:4,q:'M'},{s:5,q:'P'},{s:7,q:'P'},{s:9,q:'M'},{s:11,q:'M'}],
+  'Minor':            [{s:0,q:'P'},{s:2,q:'M'},{s:3,q:'m'},{s:5,q:'P'},{s:7,q:'P'},{s:8,q:'m'},{s:10,q:'m'}],
+  'Major Pentatonic': [{s:0,q:'P'},{s:2,q:'M'},{s:4,q:'M'},{s:7,q:'P'},{s:9,q:'M'}],
+  'Minor Pentatonic': [{s:0,q:'P'},{s:3,q:'m'},{s:5,q:'P'},{s:7,q:'P'},{s:10,q:'m'}],
+  'Harmonic Minor':   [{s:0,q:'P'},{s:2,q:'M'},{s:3,q:'m'},{s:5,q:'P'},{s:7,q:'P'},{s:8,q:'m'},{s:11,q:'M'}],
+  'Melodic Minor':    [{s:0,q:'P'},{s:2,q:'M'},{s:3,q:'m'},{s:5,q:'P'},{s:7,q:'P'},{s:9,q:'M'},{s:11,q:'M'}],
+  'Dorian':           [{s:0,q:'P'},{s:2,q:'M'},{s:3,q:'m'},{s:5,q:'P'},{s:7,q:'P'},{s:9,q:'M'},{s:10,q:'m'}],
+  'Mixolydian':       [{s:0,q:'P'},{s:2,q:'M'},{s:4,q:'M'},{s:5,q:'P'},{s:7,q:'P'},{s:9,q:'M'},{s:10,q:'m'}],
+  'Lydian':           [{s:0,q:'P'},{s:2,q:'M'},{s:4,q:'M'},{s:6,q:'A'},{s:7,q:'P'},{s:9,q:'M'},{s:11,q:'M'}],
+  'Phrygian':         [{s:0,q:'P'},{s:1,q:'m'},{s:3,q:'m'},{s:5,q:'P'},{s:7,q:'P'},{s:8,q:'m'},{s:10,q:'m'}],
+  'Altered':          [{s:0,q:'P'},{s:1,q:'m'},{s:3,q:'m'},{s:4,q:'m'},{s:6,q:'m'},{s:8,q:'m'},{s:10,q:'m'}],
+  'Whole Tone':       [{s:0,q:'P'},{s:2,q:'M'},{s:4,q:'M'},{s:6,q:'A'},{s:8,q:'A'},{s:10,q:'m'}],
+  'Diminished':       [{s:0,q:'P'},{s:1,q:'m'},{s:3,q:'m'},{s:4,q:'M'},{s:6,q:'A'},{s:7,q:'P'},{s:9,q:'M'},{s:10,q:'m'}],
+};
+let scaleEnabled = {};
+SCALE_NAMES.forEach(name => scaleEnabled[name] = true);
 function getCagedNoteDescs(root, form) {
   return (CAGED_NOTE_INTERVALS[form]||[]).map(({s,q})=>{
     const {noteName,octaveOffset}=_intervalNote(root,s,q);
@@ -344,6 +384,17 @@ function getChordNoteDescs(root, chordType) {
   // If lowest note is above middle of staff, shift down one octave to keep notes displayable
   const minPos = descs.length ? Math.min(...descs.map(d=>d.pos)) : 0;
   const shift = minPos > 0 ? -7 : 0;
+  return shift ? descs.map(d=>({pos:d.pos+shift, acc:d.acc})) : descs;
+}
+function getScaleNoteDescs(root, scaleType) {
+  const intervals = SCALE_INTERVALS[scaleType];
+  if (!intervals) return [];
+  const descs = intervals.map(({s,q}) => {
+    const {noteName, octaveOffset} = _intervalNote(root, s, q);
+    return _noteDesc(noteName, octaveOffset);
+  }).filter(Boolean);
+  const minPos = descs.length ? Math.min(...descs.map(d=>d.pos)) : 0;
+  const shift = minPos > 2 ? -7 : 0;
   return shift ? descs.map(d=>({pos:d.pos+shift, acc:d.acc})) : descs;
 }
 
@@ -488,73 +539,121 @@ function initStaffCanvas() {
   canvas.getContext('2d').scale(dpr, dpr);
 }
 // input: note name string (single note) OR array of {pos,acc} descriptors OR falsy (clear)
-function drawStaffCanvas(input) {
+// isScale: if true, spread notes horizontally like a scale on sheet music
+function drawStaffCanvas(input, isScale) {
   const canvas = document.getElementById('staffCanvas');
   if (!canvas) return;
+
+  // Resolve to array of {pos, acc}
+  let noteDescs;
+  if (!input || (Array.isArray(input) && input.length === 0)) {
+    noteDescs = [];
+  } else if (Array.isArray(input)) {
+    noteDescs = input;
+  } else {
+    const match = ('' + input).match(/^([A-G][#b]?)/);
+    if (!match) { noteDescs = []; } else {
+      const nd = _BASE_ND[match[1]]; noteDescs = nd ? [nd] : [];
+    }
+  }
+
+  // Dynamic canvas width for scale mode
+  const noteCount = noteDescs.length;
+  const W = isScale && noteCount > 1 ? Math.max(STAFF_W, 55 + noteCount * 30) : STAFF_W;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = W * dpr; canvas.height = STAFF_H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = STAFF_H + 'px';
   const c = canvas.getContext('2d');
-  c.clearRect(0, 0, STAFF_W, STAFF_H);
+  c.scale(dpr, dpr);
+
   const lineSpacing = STAFF_H / 8;
   const midY = STAFF_H / 2;
-  const staffLeft = STAFF_W * 0.24, staffRight = STAFF_W * 0.97;
+  const unit = lineSpacing / 2;
+  const staffLeft = W * 0.18, staffRight = W * 0.97;
   const staffColor = '#888', noteColor = '#FFD700';
+
+  // Draw staff lines
   c.strokeStyle = staffColor; c.lineWidth = 1;
   for (let i = -2; i <= 2; i++) {
     const y = midY - i * lineSpacing;
     c.beginPath(); c.moveTo(staffLeft, y); c.lineTo(staffRight, y); c.stroke();
   }
+  // Treble clef
   c.fillStyle = staffColor;
   c.font = (lineSpacing * 5) + 'px serif';
   c.textAlign = 'left'; c.textBaseline = 'middle';
-  c.fillText('\u{1D11E}', STAFF_W * 0.01, midY - lineSpacing * 0.5);
-  if (!input || (Array.isArray(input) && input.length === 0)) return;
+  c.fillText('\u{1D11E}', W * 0.01, midY - lineSpacing * 0.5);
 
-  // Resolve to array of {pos, acc}
-  let noteDescs;
-  if (Array.isArray(input)) {
-    noteDescs = input;
-  } else {
-    const match = ('' + input).match(/^([A-G][#b]?)/);
-    if (!match) return;
-    const nd = _BASE_ND[match[1]]; if (!nd) return;
-    noteDescs = [nd];
-  }
+  if (noteDescs.length === 0) return;
 
-  const unit = lineSpacing / 2;
-  const noteX = STAFF_W * 0.70;
-  const rx = lineSpacing * 0.58, ry = lineSpacing * 0.40;
+  const rx = lineSpacing * 0.52, ry = lineSpacing * 0.38;
   const lpad = rx * 1.6;
-  const positions = noteDescs.map(d => d.pos);
-  const minPos = Math.min(...positions), maxPos = Math.max(...positions);
 
-  // Ledger lines below staff (even pos <= -6) and above (even pos >= 6)
-  c.strokeStyle = staffColor; c.lineWidth = 1;
-  for (let p = -6; p >= minPos; p -= 2) { const y = midY - p * unit; c.beginPath(); c.moveTo(noteX-lpad,y); c.lineTo(noteX+lpad,y); c.stroke(); }
-  for (let p =  6; p <= maxPos; p += 2) { const y = midY - p * unit; c.beginPath(); c.moveTo(noteX-lpad,y); c.lineTo(noteX+lpad,y); c.stroke(); }
+  if (isScale && noteCount > 1) {
+    // ── Scale mode: spread notes horizontally ──
+    const startX = W * 0.24;
+    const endX = W * 0.92;
+    const step = (endX - startX) / (noteCount - 1);
 
-  // Note heads and accidentals
-  c.fillStyle = noteColor;
-  for (const nd of noteDescs) {
-    const noteY = midY - nd.pos * unit;
-    c.beginPath(); c.ellipse(noteX, noteY, rx, ry, -0.25, 0, Math.PI*2); c.fill();
-    if (nd.acc) {
-      c.font = 'bold ' + (lineSpacing*1.6) + 'px serif';
-      c.textAlign = 'right'; c.textBaseline = 'middle';
-      c.fillText(nd.acc === '#' ? '\u266F' : '\u266D', noteX - rx - 3, noteY);
+    for (let i = 0; i < noteCount; i++) {
+      const nd = noteDescs[i];
+      const noteX = startX + i * step;
+      const noteY = midY - nd.pos * unit;
+
+      // Ledger lines for this note
+      c.strokeStyle = staffColor; c.lineWidth = 1;
+      for (let p = -6; p >= nd.pos; p -= 2) { const y = midY - p * unit; c.beginPath(); c.moveTo(noteX-lpad,y); c.lineTo(noteX+lpad,y); c.stroke(); }
+      for (let p =  6; p <= nd.pos; p += 2) { const y = midY - p * unit; c.beginPath(); c.moveTo(noteX-lpad,y); c.lineTo(noteX+lpad,y); c.stroke(); }
+
+      // Note head
+      c.fillStyle = noteColor;
+      c.beginPath(); c.ellipse(noteX, noteY, rx, ry, -0.25, 0, Math.PI*2); c.fill();
+
+      // Accidental
+      if (nd.acc) {
+        c.font = 'bold ' + (lineSpacing*1.4) + 'px serif';
+        c.textAlign = 'right'; c.textBaseline = 'middle';
+        c.fillStyle = noteColor;
+        c.fillText(nd.acc === '#' ? '\u266F' : '\u266D', noteX - rx - 2, noteY);
+      }
     }
-  }
-
-  // Stem: up from highest note if avg below middle, else down from lowest
-  const avgPos = positions.reduce((a,b)=>a+b,0) / positions.length;
-  c.strokeStyle = noteColor; c.lineWidth = 1.5;
-  c.beginPath();
-  if (avgPos < 0) {
-    const hy = midY - maxPos * unit;
-    c.moveTo(noteX+rx-1, hy); c.lineTo(noteX+rx-1, hy - lineSpacing*3.5);
+    // No stem in scale mode
   } else {
-    const ly = midY - minPos * unit;
-    c.moveTo(noteX-rx+1, ly); c.lineTo(noteX-rx+1, ly + lineSpacing*3.5);
+    // ── Chord / single-note mode ──
+    const noteX = W * 0.70;
+    const positions = noteDescs.map(d => d.pos);
+    const minPos = Math.min(...positions), maxPos = Math.max(...positions);
+
+    // Ledger lines
+    c.strokeStyle = staffColor; c.lineWidth = 1;
+    for (let p = -6; p >= minPos; p -= 2) { const y = midY - p * unit; c.beginPath(); c.moveTo(noteX-lpad,y); c.lineTo(noteX+lpad,y); c.stroke(); }
+    for (let p =  6; p <= maxPos; p += 2) { const y = midY - p * unit; c.beginPath(); c.moveTo(noteX-lpad,y); c.lineTo(noteX+lpad,y); c.stroke(); }
+
+    // Note heads and accidentals
+    c.fillStyle = noteColor;
+    for (const nd of noteDescs) {
+      const noteY = midY - nd.pos * unit;
+      c.beginPath(); c.ellipse(noteX, noteY, rx, ry, -0.25, 0, Math.PI*2); c.fill();
+      if (nd.acc) {
+        c.font = 'bold ' + (lineSpacing*1.6) + 'px serif';
+        c.textAlign = 'right'; c.textBaseline = 'middle';
+        c.fillText(nd.acc === '#' ? '\u266F' : '\u266D', noteX - rx - 3, noteY);
+      }
+    }
+
+    // Stem
+    const avgPos = positions.reduce((a,b)=>a+b,0) / positions.length;
+    c.strokeStyle = noteColor; c.lineWidth = 1.5;
+    c.beginPath();
+    if (avgPos < 0) {
+      const hy = midY - maxPos * unit;
+      c.moveTo(noteX+rx-1, hy); c.lineTo(noteX+rx-1, hy - lineSpacing*3.5);
+    } else {
+      const ly = midY - minPos * unit;
+      c.moveTo(noteX-rx+1, ly); c.lineTo(noteX-rx+1, ly + lineSpacing*3.5);
+    }
+    c.stroke();
   }
-  c.stroke();
 }
 
 // ── App State ──────────────────────────────────────────────────────
@@ -579,7 +678,7 @@ const gridContainer = $('gridContainer'), startBtn = $('startBtn'), stopBtn = $(
 const sineSlider = $('sineSlider'), sineVal = $('sineVal'), sineBtn = $('sineBtn');
 const presetNameEdit = $('presetNameEdit'), presetList = $('presetList');
 const noteDisplay = $('noteDisplay'), extraDisplay = $('extraDisplay'), statusDisplay = $('statusDisplay');
-const noteModeBtn = $('noteModeBtn'), cagedModeBtn = $('cagedModeBtn'), chordModeBtn = $('chordModeBtn');
+const noteModeBtn = $('noteModeBtn'), cagedModeBtn = $('cagedModeBtn'), chordModeBtn = $('chordModeBtn'), scaleModeBtn = $('scaleModeBtn');
 const prerollSlider = $('prerollSlider'), prerollValEl = $('prerollVal');
 const beatRepeatSlider = $('beatRepeatSlider'), beatRepeatValEl = $('beatRepeatVal');
 
@@ -722,7 +821,7 @@ const unlockAll = () => {
 // touchstart on key buttons: initContext + resume synchronously within the gesture.
 // This is the critical iOS path — resume() must be called in the synchronous part
 // of a user-gesture handler; async/await breaks that guarantee.
-[startBtn, noteModeBtn, cagedModeBtn, chordModeBtn].forEach(btn => {
+[startBtn, noteModeBtn, cagedModeBtn, chordModeBtn, scaleModeBtn].forEach(btn => {
   btn.addEventListener('touchstart', () => {
     engine.initContext();
     if (engine.ctx && engine.ctx.state === 'suspended') engine.ctx.resume().catch(console.error);
@@ -749,12 +848,16 @@ function drawPracticeStaff() {
   else if (practiceMode === "chord") {
     const m = currentNote.match(/^([A-G][#b]?)(.+)$/);
     if (m) drawStaffCanvas(getChordNoteDescs(m[1], m[2]));
+  } else if (practiceMode === "scale") {
+    const m = currentNote.match(/^([A-G][#b]?)\s(.+)$/);
+    if (m) drawStaffCanvas(getScaleNoteDescs(m[1], m[2]), true);
   }
 }
 function pickNewContent() {
   if (practiceMode === "note") { currentNote = randNote(currentNote); noteDisplay.textContent = currentNote; extraDisplay.textContent = ""; statusDisplay.textContent = ""; }
   else if (practiceMode === "caged") { currentNote = randNote(currentNote); currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; statusDisplay.textContent = ""; }
   else if (practiceMode === "chord") { const pn = getPracticeNotes(); const r = pn[Math.floor(Math.random() * pn.length)], ct = CHORD_TYPES[Math.floor(Math.random() * CHORD_TYPES.length)]; currentNote = r + ct; currentExtra = "= " + getRootlessChord(r, ct); noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; statusDisplay.textContent = ""; }
+  else if (practiceMode === "scale") { const pn = getPracticeNotes(); const r = pn[Math.floor(Math.random() * pn.length)]; const enabled = SCALE_NAMES.filter(n => scaleEnabled[n]); if (!enabled.length) return; const st = enabled[Math.floor(Math.random() * enabled.length)]; currentNote = r + " " + st; currentExtra = ""; noteDisplay.textContent = r; extraDisplay.textContent = st; statusDisplay.textContent = ""; }
   drawPracticeStaff();
 }
 function onKickHit() {
@@ -766,11 +869,12 @@ function onKickHit() {
     if (kickCounter === half) { currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; extraDisplay.textContent = currentExtra; drawPracticeStaff(); }
     if (kickCounter >= beatRepeatValue) { kickCounter = 0; currentNote = randNote(currentNote); currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; drawPracticeStaff(); }
   } else if (practiceMode === "chord") { if (kickCounter >= beatRepeatValue) { kickCounter = 0; pickNewContent(); } }
+  else if (practiceMode === "scale") { if (kickCounter >= beatRepeatValue) { kickCounter = 0; pickNewContent(); } }
 }
 function stopPractice() {
   practiceMode = null; kickCounter = 0; prerollDone = false; currentNote = ""; currentExtra = "";
   noteDisplay.textContent = ""; extraDisplay.textContent = ""; statusDisplay.textContent = "";
-  noteModeBtn.classList.remove('active'); cagedModeBtn.classList.remove('active'); chordModeBtn.classList.remove('active');
+  noteModeBtn.classList.remove('active'); cagedModeBtn.classList.remove('active'); chordModeBtn.classList.remove('active'); scaleModeBtn.classList.remove('active');
   drawStaffCanvas("");
 }
 async function onMode(mode) {
@@ -779,7 +883,7 @@ async function onMode(mode) {
   if (practiceMode === mode) { stopPractice(); stopPlayback(); currentStep = 0; playing = false; paused = false; startBtn.innerHTML = '&#9654;'; clearHighlight(); return; }
   stopPlayback(); clearHighlight();
   practiceMode = mode; kickCounter = 0; prerollDone = (prerollValue === 0); currentNote = ""; currentExtra = "";
-  noteModeBtn.classList.toggle('active', mode === "note"); cagedModeBtn.classList.toggle('active', mode === "caged"); chordModeBtn.classList.toggle('active', mode === "chord");
+  noteModeBtn.classList.toggle('active', mode === "note"); cagedModeBtn.classList.toggle('active', mode === "caged"); chordModeBtn.classList.toggle('active', mode === "chord"); scaleModeBtn.classList.toggle('active', mode === "scale");
   if (!prerollDone) { noteDisplay.textContent = ""; extraDisplay.textContent = ""; statusDisplay.textContent = `Pre-roll: ${prerollValue}`; } else pickNewContent();
   currentStep = 0; playing = true; paused = false; startBtn.innerHTML = '&#9208;';
   engine.seqNumSteps = METER_CONFIG[meter].steps; syncEngineOwner(); engine.startSequencer(0);
@@ -787,6 +891,7 @@ async function onMode(mode) {
 noteModeBtn.addEventListener('click', () => onMode("note"));
 cagedModeBtn.addEventListener('click', () => onMode("caged"));
 chordModeBtn.addEventListener('click', () => onMode("chord"));
+scaleModeBtn.addEventListener('click', () => onMode("scale"));
 
 // ── Controls ───────────────────────────────────────────────────────
 bpmSpin.addEventListener('input', () => { bpm = parseFloat(bpmSpin.value) || 70; bpmSlider.value = Math.round(bpm * 10); });
@@ -831,8 +936,24 @@ $('saveBtn').addEventListener('click', () => {
 $('loadBtn').addEventListener('click', () => loadPreset(selectedPresetIdx));
 $('deleteBtn').addEventListener('click', () => { if (selectedPresetIdx >= 0 && selectedPresetIdx < presets.length) { presets.splice(selectedPresetIdx, 1); refreshPresetList(); } });
 
+// ── Scale Toggles ──────────────────────────────────────────────────
+function buildScaleToggles() {
+  const grid = $('scaleTogglesGrid');
+  grid.innerHTML = '';
+  SCALE_NAMES.forEach(name => {
+    const label = document.createElement('label');
+    label.className = 'scale-toggle-label';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = scaleEnabled[name];
+    cb.addEventListener('change', () => { scaleEnabled[name] = cb.checked; });
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(name));
+    grid.appendChild(label);
+  });
+}
+
 // ── Init ───────────────────────────────────────────────────────────
-applyDefaultPatterns(); buildGrid(); refreshPresetList(); initStaffCanvas();
+applyDefaultPatterns(); buildGrid(); refreshPresetList(); initStaffCanvas(); buildScaleToggles();
 </script>
 </body>
 </html>
