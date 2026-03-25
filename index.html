@@ -861,7 +861,7 @@ function pickNewContent() {
   else if (practiceMode === "scale") { const pn = getPracticeNotes(); const r = pn[Math.floor(Math.random() * pn.length)]; const enabled = SCALE_NAMES.filter(n => scaleEnabled[n]); if (!enabled.length) return; const st = enabled[Math.floor(Math.random() * enabled.length)]; currentNote = r + " " + st; currentExtra = ""; noteDisplay.textContent = r; extraDisplay.textContent = st; statusDisplay.textContent = ""; }
   drawPracticeStaff();
 }
-function updateBeatCountdown() { const cd = $('beatCountdown'); if (!practiceMode || !prerollDone) { cd.textContent = ''; return; } cd.textContent = beatRepeatValue - kickCounter; }
+function updateBeatCountdown() { const cd = $('beatCountdown'); if (!practiceMode || !prerollDone) { cd.textContent = ''; return; } cd.textContent = 'UntilNext: ' + (beatRepeatValue - kickCounter); }
 function onKickHit() {
   if (!practiceMode) return; kickCounter++;
   if (!prerollDone) { const rem = prerollValue - kickCounter; if (rem <= 0) { prerollDone = true; kickCounter = 0; pickNewContent(); } else statusDisplay.textContent = `Pre-roll: ${rem}`; updateBeatCountdown(); return; }
