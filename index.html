@@ -175,11 +175,11 @@ select {
     <div class="inner-section">
       <div class="slider-row">
         <label>Pre-roll:</label>
-        <input type="range" id="prerollSlider" min="0" max="8" value="5">
-        <span class="val" id="prerollVal">5</span>
+        <input type="range" id="prerollSlider" min="0" max="8" value="4">
+        <span class="val" id="prerollVal">4</span>
       </div>
       <div class="slider-row">
-        <label>Beats:</label>
+        <label>Maintain:</label>
         <input type="range" id="beatRepeatSlider" min="1" max="16" value="8">
         <span class="val" id="beatRepeatVal">8</span>
       </div>
@@ -903,7 +903,7 @@ meterCombo.addEventListener('change', () => {
   currentStep = 0; prevHighlight = -1; applyDefaultPatterns(); buildGrid();
 });
 swingSlider.addEventListener('input', () => { swing = parseInt(swingSlider.value); swingVal.textContent = swing + '%'; });
-prerollSlider.addEventListener('input', () => { prerollValue = parseInt(prerollSlider.value); prerollValEl.textContent = prerollValue; });
+prerollSlider.addEventListener('input', () => { prerollValue = parseInt(prerollSlider.value) + 1; prerollValEl.textContent = prerollSlider.value; });
 beatRepeatSlider.addEventListener('input', () => { beatRepeatValue = parseInt(beatRepeatSlider.value); beatRepeatValEl.textContent = beatRepeatValue; });
 $('flatsCheck').addEventListener('change', e => { useFlats = e.target.checked; });
 
