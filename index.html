@@ -172,6 +172,9 @@ select {
         <input type="range" id="beatRepeatSlider" min="1" max="16" value="8">
         <span class="val" id="beatRepeatVal">8</span>
       </div>
+      <div class="control-row">
+        <label class="checkbox-label"><input type="checkbox" id="flatsCheck"> Flats (Db/Gb)</label>
+      </div>
     </div>
   </div>
 
@@ -282,13 +285,13 @@ function getRootlessChord(root, ct) {
 const _CHROM_S = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 const _CHROM_F = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
 const _CHROM_B = ["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"]; // app base
-const _FLAT_ROOTS = new Set(['F','Bb','Eb','Ab']);
+const _FLAT_ROOTS = new Set(['F','Bb','Eb','Ab','Db','Gb','Cb','Fb']);
 const _ENH = {"Db":"C#","D#":"Eb","Gb":"F#","G#":"Ab","A#":"Bb"};
 // Returns {noteName, octaveOffset} for root+semitones; quality: 'M'=major,'m'=minor,'P'=perfect,'A'=aug
 function _intervalNote(root, semitones, quality) {
   const norm = _ENH[root] || root;
   const rootIdx = _CHROM_B.indexOf(norm);
-  const useFlat = quality === 'm' ? true : quality === 'A' ? false : _FLAT_ROOTS.has(norm);
+  const useFlat = quality === 'm' ? true : quality === 'A' ? false : (_FLAT_ROOTS.has(root) || _FLAT_ROOTS.has(norm));
   const chrom = useFlat ? _CHROM_F : _CHROM_S;
   const absPos = rootIdx + semitones;
   return { noteName: chrom[((absPos % 12) + 12) % 12], octaveOffset: Math.floor(absPos / 12) };
@@ -556,7 +559,7 @@ function drawStaffCanvas(input) {
 
 // ── App State ──────────────────────────────────────────────────────
 const engine = new AudioEngine();
-let bpm = 70.0, doubleTime = false, meter = "4/4", swing = 50;
+let bpm = 70.0, doubleTime = false, meter = "4/4", swing = 50, useFlats = false;
 let playing = false, paused = false, currentStep = 0, prevHighlight = -1;
 let patterns = {}; for (const t of TRACK_INFO) patterns[t.name] = new Array(24).fill(false);
 let practiceMode = null, prerollValue = 5, beatRepeatValue = 8;
@@ -581,6 +584,7 @@ const prerollSlider = $('prerollSlider'), prerollValEl = $('prerollVal');
 const beatRepeatSlider = $('beatRepeatSlider'), beatRepeatValEl = $('beatRepeatVal');
 
 // ── Helpers ────────────────────────────────────────────────────────
+function getPracticeNotes() { return useFlats ? _CHROM_F : CHROMATIC; }
 function getSixteenthDuration() {
   let b = bpm; if (doubleTime) b *= 2;
   return meter.endsWith("/8") ? 60.0 / (b * 6) : 60.0 / (b * 4);
@@ -738,7 +742,7 @@ stopBtn.addEventListener('click', () => {
 });
 
 // ── Practice Modes ─────────────────────────────────────────────────
-function randNote(exc) { const c = PRACTICE_NOTES.filter(n => n !== exc); return c[Math.floor(Math.random() * c.length)]; }
+function randNote(exc) { const c = getPracticeNotes().filter(n => n !== exc); return c[Math.floor(Math.random() * c.length)]; }
 function drawPracticeStaff() {
   if (practiceMode === "note") { drawStaffCanvas(currentNote); }
   else if (practiceMode === "caged") { drawStaffCanvas(getCagedNoteDescs(currentNote, currentExtra)); }
@@ -750,7 +754,7 @@ function drawPracticeStaff() {
 function pickNewContent() {
   if (practiceMode === "note") { currentNote = randNote(currentNote); noteDisplay.textContent = currentNote; extraDisplay.textContent = ""; statusDisplay.textContent = ""; }
   else if (practiceMode === "caged") { currentNote = randNote(currentNote); currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; statusDisplay.textContent = ""; }
-  else if (practiceMode === "chord") { const r = PRACTICE_NOTES[Math.floor(Math.random() * PRACTICE_NOTES.length)], ct = CHORD_TYPES[Math.floor(Math.random() * CHORD_TYPES.length)]; currentNote = r + ct; currentExtra = "= " + getRootlessChord(r, ct); noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; statusDisplay.textContent = ""; }
+  else if (practiceMode === "chord") { const pn = getPracticeNotes(); const r = pn[Math.floor(Math.random() * pn.length)], ct = CHORD_TYPES[Math.floor(Math.random() * CHORD_TYPES.length)]; currentNote = r + ct; currentExtra = "= " + getRootlessChord(r, ct); noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; statusDisplay.textContent = ""; }
   drawPracticeStaff();
 }
 function onKickHit() {
@@ -796,6 +800,7 @@ meterCombo.addEventListener('change', () => {
 swingSlider.addEventListener('input', () => { swing = parseInt(swingSlider.value); swingVal.textContent = swing + '%'; });
 prerollSlider.addEventListener('input', () => { prerollValue = parseInt(prerollSlider.value); prerollValEl.textContent = prerollValue; });
 beatRepeatSlider.addEventListener('input', () => { beatRepeatValue = parseInt(beatRepeatSlider.value); beatRepeatValEl.textContent = beatRepeatValue; });
+$('flatsCheck').addEventListener('change', e => { useFlats = e.target.checked; });
 
 // ── Presets ────────────────────────────────────────────────────────
 function refreshPresetList() {
