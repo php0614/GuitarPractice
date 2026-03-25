@@ -185,6 +185,7 @@ select {
       </div>
       <div class="control-row">
         <label class="checkbox-label"><input type="checkbox" id="flatsCheck"> Flats (Db/Gb)</label>
+        <span id="beatCountdown" style="margin-left:12px;font-weight:bold;color:#f90;font-size:1.1em;"></span>
       </div>
     </div>
   </div>
@@ -860,9 +861,10 @@ function pickNewContent() {
   else if (practiceMode === "scale") { const pn = getPracticeNotes(); const r = pn[Math.floor(Math.random() * pn.length)]; const enabled = SCALE_NAMES.filter(n => scaleEnabled[n]); if (!enabled.length) return; const st = enabled[Math.floor(Math.random() * enabled.length)]; currentNote = r + " " + st; currentExtra = ""; noteDisplay.textContent = r; extraDisplay.textContent = st; statusDisplay.textContent = ""; }
   drawPracticeStaff();
 }
+function updateBeatCountdown() { const cd = $('beatCountdown'); if (!practiceMode || !prerollDone) { cd.textContent = ''; return; } cd.textContent = beatRepeatValue - kickCounter; }
 function onKickHit() {
   if (!practiceMode) return; kickCounter++;
-  if (!prerollDone) { const rem = prerollValue - kickCounter; if (rem <= 0) { prerollDone = true; kickCounter = 0; pickNewContent(); } else statusDisplay.textContent = `Pre-roll: ${rem}`; return; }
+  if (!prerollDone) { const rem = prerollValue - kickCounter; if (rem <= 0) { prerollDone = true; kickCounter = 0; pickNewContent(); } else statusDisplay.textContent = `Pre-roll: ${rem}`; updateBeatCountdown(); return; }
   if (practiceMode === "note") { if (kickCounter >= beatRepeatValue) { kickCounter = 0; pickNewContent(); } }
   else if (practiceMode === "caged") {
     const half = Math.max(1, Math.floor((beatRepeatValue + 1) / 2));
@@ -870,10 +872,11 @@ function onKickHit() {
     if (kickCounter >= beatRepeatValue) { kickCounter = 0; currentNote = randNote(currentNote); currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; drawPracticeStaff(); }
   } else if (practiceMode === "chord") { if (kickCounter >= beatRepeatValue) { kickCounter = 0; pickNewContent(); } }
   else if (practiceMode === "scale") { if (kickCounter >= beatRepeatValue) { kickCounter = 0; pickNewContent(); } }
+  updateBeatCountdown();
 }
 function stopPractice() {
   practiceMode = null; kickCounter = 0; prerollDone = false; currentNote = ""; currentExtra = "";
-  noteDisplay.textContent = ""; extraDisplay.textContent = ""; statusDisplay.textContent = "";
+  noteDisplay.textContent = ""; extraDisplay.textContent = ""; statusDisplay.textContent = ""; $('beatCountdown').textContent = "";
   noteModeBtn.classList.remove('active'); cagedModeBtn.classList.remove('active'); chordModeBtn.classList.remove('active'); scaleModeBtn.classList.remove('active');
   drawStaffCanvas("");
 }
