@@ -706,7 +706,7 @@ let presets = [{
   "Snare": "00000000000000000000", "Kick": "10001000100010001000",
 }];
 let selectedPresetIdx = -1, stepButtons = [];
-const trackVolumes = { "Kick": 1, "Snare": 1, "C-Hat": 1, "O-Hat": 1 };
+const trackVolumes = { "Kick": 2, "Snare": 2, "C-Hat": 2, "O-Hat": 2 };
 
 // ── DOM refs ───────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -1001,7 +1001,7 @@ function buildScaleToggles() {
 ].forEach(({ id, valId, name }) => {
   const slider = $(id), label = $(valId);
   slider.addEventListener('input', () => {
-    trackVolumes[name] = parseInt(slider.value) / 50;
+    trackVolumes[name] = parseInt(slider.value) / 25;
     label.textContent = slider.value;
   });
 });
