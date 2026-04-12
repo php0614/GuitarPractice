@@ -99,6 +99,13 @@ select {
 #sineBtn:active { background: #3A3A5E; }
 #sineBtn.playing { background: #3A2A1E; border-color: #FF6B35; color: #FFD700; }
 
+/* ── Drum Volumes ────────────────────────────────── */
+.drum-vol-block { display: flex; flex-direction: column; gap: 6px; padding: 8px 4px 4px; }
+.drum-vol-row { display: flex; align-items: center; gap: 8px; }
+.drum-vol-row label { font-size: 11px; font-weight: bold; white-space: nowrap; min-width: 38px; color: #CCC; }
+.drum-vol-row input[type="range"] { flex: 1; height: 6px; accent-color: #FF6B35; }
+.drum-vol-row .val { width: 34px; text-align: right; font-size: 11px; color: #AAA; }
+
 /* ── Presets ──────────────────────────────────────── */
 .preset-save-row { display: flex; gap: 4px; margin-bottom: 4px; }
 .preset-save-row input[type="text"] {
@@ -213,6 +220,30 @@ select {
         <span class="val" id="swingVal">50%</span>
       </div>
       <div class="grid-container" id="gridContainer"></div>
+    </div>
+  </div>
+
+  <!-- Drum Volumes -->
+  <div class="drum-vol-block">
+    <div class="drum-vol-row">
+      <label>Kick</label>
+      <input type="range" id="volKick" min="0" max="1" step="0.01" value="1">
+      <span class="val" id="volKickVal">100%</span>
+    </div>
+    <div class="drum-vol-row">
+      <label>Snare</label>
+      <input type="range" id="volSnare" min="0" max="1" step="0.01" value="1">
+      <span class="val" id="volSnareVal">100%</span>
+    </div>
+    <div class="drum-vol-row">
+      <label>C-Hat</label>
+      <input type="range" id="volCHat" min="0" max="1" step="0.01" value="1">
+      <span class="val" id="volCHatVal">100%</span>
+    </div>
+    <div class="drum-vol-row">
+      <label>O-Hat</label>
+      <input type="range" id="volOHat" min="0" max="1" step="0.01" value="1">
+      <span class="val" id="volOHatVal">100%</span>
     </div>
   </div>
 
@@ -478,15 +509,20 @@ class AudioEngine {
   }
   _playSample(name, time, envDur) {
     const buf = this.buffers[name]; if (!buf) return;
+    const vol = (typeof trackVolumes !== 'undefined' && trackVolumes[name] != null) ? trackVolumes[name] : 1;
+    if (vol === 0) return;
     const src = this.ctx.createBufferSource(); src.buffer = buf;
     const now = Math.max(time, this.ctx.currentTime);
+    const g = this.ctx.createGain(); g.connect(this.ctx.destination);
     if (envDur > 0) {
-      const g = this.ctx.createGain(); g.connect(this.ctx.destination);
       g.gain.setValueAtTime(0, now);
-      g.gain.linearRampToValueAtTime(1, now + 0.005);
+      g.gain.linearRampToValueAtTime(vol, now + 0.005);
       g.gain.setTargetAtTime(0.001, now + 0.005, envDur / 3);
       src.connect(g); src.start(now); src.stop(now + envDur + 0.2);
-    } else { src.connect(this.ctx.destination); src.start(now); }
+    } else {
+      g.gain.setValueAtTime(vol, now);
+      src.connect(g); src.start(now);
+    }
   }
   _getStepDuration(step) {
     if (!this.seqOwner) return 0.125;
@@ -670,6 +706,7 @@ let presets = [{
   "Snare": "00000000000000000000", "Kick": "10001000100010001000",
 }];
 let selectedPresetIdx = -1, stepButtons = [];
+const trackVolumes = { "Kick": 1, "Snare": 1, "C-Hat": 1, "O-Hat": 1 };
 
 // ── DOM refs ───────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -954,6 +991,20 @@ function buildScaleToggles() {
     grid.appendChild(label);
   });
 }
+
+// ── Drum Volume Sliders ────────────────────────────────────────────
+[
+  { id: 'volKick',  valId: 'volKickVal',  name: 'Kick'  },
+  { id: 'volSnare', valId: 'volSnareVal', name: 'Snare' },
+  { id: 'volCHat',  valId: 'volCHatVal',  name: 'C-Hat' },
+  { id: 'volOHat',  valId: 'volOHatVal',  name: 'O-Hat' },
+].forEach(({ id, valId, name }) => {
+  const slider = $(id), label = $(valId);
+  slider.addEventListener('input', () => {
+    trackVolumes[name] = parseFloat(slider.value);
+    label.textContent = Math.round(slider.value * 100) + '%';
+  });
+});
 
 // ── Init ───────────────────────────────────────────────────────────
 applyDefaultPatterns(); buildGrid(); refreshPresetList(); initStaffCanvas(); buildScaleToggles();
