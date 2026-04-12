@@ -227,23 +227,23 @@ select {
   <div class="drum-vol-block">
     <div class="drum-vol-row">
       <label>Kick</label>
-      <input type="range" id="volKick" min="0" max="1" step="0.01" value="1">
-      <span class="val" id="volKickVal">100%</span>
+      <input type="range" id="volKick" min="0" max="100" step="1" value="50">
+      <span class="val" id="volKickVal">50</span>
     </div>
     <div class="drum-vol-row">
       <label>Snare</label>
-      <input type="range" id="volSnare" min="0" max="1" step="0.01" value="1">
-      <span class="val" id="volSnareVal">100%</span>
+      <input type="range" id="volSnare" min="0" max="100" step="1" value="50">
+      <span class="val" id="volSnareVal">50</span>
     </div>
     <div class="drum-vol-row">
       <label>C-Hat</label>
-      <input type="range" id="volCHat" min="0" max="1" step="0.01" value="1">
-      <span class="val" id="volCHatVal">100%</span>
+      <input type="range" id="volCHat" min="0" max="100" step="1" value="50">
+      <span class="val" id="volCHatVal">50</span>
     </div>
     <div class="drum-vol-row">
       <label>O-Hat</label>
-      <input type="range" id="volOHat" min="0" max="1" step="0.01" value="1">
-      <span class="val" id="volOHatVal">100%</span>
+      <input type="range" id="volOHat" min="0" max="100" step="1" value="50">
+      <span class="val" id="volOHatVal">50</span>
     </div>
   </div>
 
@@ -1001,8 +1001,8 @@ function buildScaleToggles() {
 ].forEach(({ id, valId, name }) => {
   const slider = $(id), label = $(valId);
   slider.addEventListener('input', () => {
-    trackVolumes[name] = parseFloat(slider.value);
-    label.textContent = Math.round(slider.value * 100) + '%';
+    trackVolumes[name] = parseInt(slider.value) / 50;
+    label.textContent = slider.value;
   });
 });
 
