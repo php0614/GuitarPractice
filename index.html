@@ -246,6 +246,8 @@ select {
         </select>
         <button id="lockBtn" class="lock-btn" title="Lock current prompt (keep repeating it) — R">&#128275; Repeat the Current</button>
         <button id="arpLockBtn" class="lock-btn" title="Lock the arpeggio position (keep repeating the same one) — A">&#128275; Arp</button>
+        <button id="rootLockBtn" class="lock-btn" title="Force the selected root note in every mode">&#128275; Root</button>
+        <select id="rootSelect" title="Root note used while Root is locked" style="margin-left:6px;"></select>
         <span id="beatCountdown" style="margin-left:12px;font-weight:bold;color:#f90;font-size:1.1em;"></span>
       </div>
     </div>
@@ -1495,6 +1497,7 @@ const tuningCombo = $('tuningCombo'), tuningNotesEl = $('tuningNotes');
 const rhythmDiffCombo = $('rhythmDiffCombo');
 const lockBtn = $('lockBtn');
 const arpLockBtn = $('arpLockBtn');
+const rootLockBtn = $('rootLockBtn'), rootSelect = $('rootSelect');
 const displayFrame = $('displayFrame');
 const MODE_BTNS = {
   note: $('noteModeBtn'), caged: $('cagedModeBtn'), chord: $('chordModeBtn'),
@@ -1619,6 +1622,39 @@ stopBtn.addEventListener('click', () => {
 
 // ── Practice Modes ─────────────────────────────────────────────────
 function randNote(exc) { const c = getPracticeNotes().filter(n => n !== exc); return c[Math.floor(Math.random() * c.length)]; }
+
+// ── Root Lock ──────────────────────────────────────────────────────
+// While engaged, every mode is forced onto the dropdown's root note;
+// only the chord type / scale / triad quality keeps varying.
+let rootLocked = false;
+function buildRootSelect() {
+  const cur = rootSelect.value;
+  rootSelect.innerHTML = '';
+  for (let pc = 0; pc < 12; pc++) {
+    const o = document.createElement('option');
+    o.value = pc; o.textContent = nameOfPc(pc, useFlats);
+    rootSelect.appendChild(o);
+  }
+  rootSelect.value = cur || '0';
+}
+function lockedRootName() { return nameOfPc(parseInt(rootSelect.value, 10) || 0, useFlats); }
+// Pick the root for a new prompt: the locked note if Root lock is on,
+// otherwise a random note (optionally excluding the previous one).
+function pickRoot(exclude) {
+  if (rootLocked) return lockedRootName();
+  const pn = getPracticeNotes();
+  const pool = exclude != null ? pn.filter(n => n !== exclude) : pn;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+function setRootLocked(v) {
+  rootLocked = v;
+  rootLockBtn.classList.toggle('active', v);
+  rootLockBtn.innerHTML = (v ? '&#128274;' : '&#128275;') + ' Root';
+  if (v && practiceMode && prerollDone) pickNewContent();   // apply the locked root immediately
+}
+rootLockBtn.addEventListener('click', () => setRootLocked(!rootLocked));
+rootSelect.addEventListener('change', () => { if (rootLocked && practiceMode && prerollDone) pickNewContent(); });
+buildRootSelect();
 function getSimpleChordDescs(root, suffix) {
   const intervals = (RHYTHM_CHORDS.find(rc => rc[0] === suffix) || RHYTHM_CHORDS[0])[1];
   const descs = intervals.map(s => {
@@ -1703,10 +1739,10 @@ function updateFretboardForContent() {
 
 // ── Content generation ─────────────────────────────────────────────
 function pickNewContent() {
-  if (practiceMode === "note") { currentNote = randNote(currentNote); noteDisplay.textContent = currentNote; extraDisplay.textContent = ""; statusDisplay.textContent = ""; }
-  else if (practiceMode === "caged") { currentNote = randNote(currentNote); currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; statusDisplay.textContent = ""; }
-  else if (practiceMode === "chord") { const pn = getPracticeNotes(); const r = pn[Math.floor(Math.random() * pn.length)], ct = CHORD_TYPES[Math.floor(Math.random() * CHORD_TYPES.length)]; currentNote = r + ct; currentExtra = "= " + getRootlessChord(r, ct); noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; statusDisplay.textContent = ""; }
-  else if (practiceMode === "scale") { const pn = getPracticeNotes(); const r = pn[Math.floor(Math.random() * pn.length)]; const enabled = SCALE_NAMES.filter(n => scaleEnabled[n]); if (!enabled.length) return; const st = enabled[Math.floor(Math.random() * enabled.length)]; currentNote = r + " " + st; currentExtra = ""; noteDisplay.textContent = r; extraDisplay.textContent = st; statusDisplay.textContent = ""; }
+  if (practiceMode === "note") { currentNote = pickRoot(currentNote); noteDisplay.textContent = currentNote; extraDisplay.textContent = ""; statusDisplay.textContent = ""; }
+  else if (practiceMode === "caged") { currentNote = pickRoot(currentNote); currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; statusDisplay.textContent = ""; }
+  else if (practiceMode === "chord") { const r = pickRoot(), ct = CHORD_TYPES[Math.floor(Math.random() * CHORD_TYPES.length)]; currentNote = r + ct; currentExtra = "= " + getRootlessChord(r, ct); noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; statusDisplay.textContent = ""; }
+  else if (practiceMode === "scale") { const r = pickRoot(); const enabled = SCALE_NAMES.filter(n => scaleEnabled[n]); if (!enabled.length) return; const st = enabled[Math.floor(Math.random() * enabled.length)]; currentNote = r + " " + st; currentExtra = ""; noteDisplay.textContent = r; extraDisplay.textContent = st; statusDisplay.textContent = ""; }
   else if (practiceMode === "triad") { pickNewTriad(); }
   else if (practiceMode === "rhythm") { pickNewRhythm(); }
   drawPracticeStaff();
@@ -1716,7 +1752,7 @@ function pickNewTriad() {
   const pn = getPracticeNotes();
   const tuning = TUNINGS[currentTuning];
   for (let tries = 0; tries < 40; tries++) {
-    const root = pn[Math.floor(Math.random() * pn.length)];
+    const root = pickRoot();
     const quality = TRIAD_QUALITY_NAMES[Math.floor(Math.random() * TRIAD_QUALITY_NAMES.length)];
     const inv = Math.floor(Math.random() * 3);
     const set = Math.floor(Math.random() * TRIAD_STRING_SETS.length);
@@ -1735,7 +1771,7 @@ function pickNewTriad() {
 }
 function pickNewRhythm() {
   const pn = getPracticeNotes();
-  const root = pn[Math.floor(Math.random() * pn.length)];
+  const root = pickRoot();
   const [suffix, intervals] = RHYTHM_CHORDS[Math.floor(Math.random() * RHYTHM_CHORDS.length)];
   const rhythm = generateRhythmBar(meter, rhythmDifficulty);
   const rootMidi = 45 + ((pcOf(root) - 9 + 12) % 12);
@@ -1778,7 +1814,7 @@ function onKickHit() {
   if (practiceMode === "caged") {
     const half = Math.max(1, Math.floor((beatRepeatValue + 1) / 2));
     if (kickCounter === half && !promptLocked) { currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; extraDisplay.textContent = currentExtra; drawPracticeStaff(); updateFretboardForContent(); }
-    if (kickCounter >= beatRepeatValue) { kickCounter = 0; if (!promptLocked) { currentNote = randNote(currentNote); currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; drawPracticeStaff(); updateFretboardForContent(); } }
+    if (kickCounter >= beatRepeatValue) { kickCounter = 0; if (!promptLocked) { currentNote = pickRoot(currentNote); currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; drawPracticeStaff(); updateFretboardForContent(); } }
   } else {
     if (kickCounter >= beatRepeatValue) { kickCounter = 0; if (!promptLocked) pickNewContent(); }
   }
@@ -2019,6 +2055,7 @@ prerollSlider.addEventListener('input', () => { prerollValue = parseInt(prerollS
 beatRepeatSlider.addEventListener('input', () => { beatRepeatValue = parseInt(beatRepeatSlider.value); beatRepeatValEl.textContent = beatRepeatValue; });
 $('flatsCheck').addEventListener('change', e => {
   useFlats = e.target.checked;
+  buildRootSelect();
   drawPracticeStaff(); updateFretboardForContent();
 });
 arpVolSlider.addEventListener('input', () => {
