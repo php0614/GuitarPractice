@@ -23,22 +23,37 @@ body { background: #1A1A2E; color: #E0E0E0; font-family: -apple-system, 'Segoe U
 /* ── Practice Display (always visible, top) ────────── */
 .display-frame {
   background: #12122A; border: 2px solid #333; border-radius: 12px;
-  min-height: 160px; display: flex; flex-direction: column; align-items: center;
-  justify-content: center; padding: 16px; flex-shrink: 0;
+  min-height: 150px; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 12px 16px; flex-shrink: 0;
 }
-.note-display { color: #FFD700; font-size: 56px; font-weight: bold; line-height: 1.1; }
-.extra-display { color: #00CED1; font-size: 22px; font-weight: bold; margin-top: 2px; }
+.note-display { color: #FFD700; font-size: 52px; font-weight: bold; line-height: 1.1; }
+.extra-display { color: #00CED1; font-size: 20px; font-weight: bold; margin-top: 2px; }
 .status-display { color: #888; font-size: 14px; margin-top: 6px; }
 
-/* ── Staff Notation ──────────────────────────────── */
-.display-content { display: flex; align-items: center; gap: 16px; justify-content: center; }
+/* ── Staff / Rhythm Notation ─────────────────────── */
+.display-content { display: flex; align-items: center; gap: 16px; justify-content: center; flex-wrap: wrap; }
 .note-text-col { display: flex; flex-direction: column; align-items: center; }
 #staffCanvas { flex-shrink: 0; }
+#rhythmCanvas { display: none; margin-top: 4px; max-width: 100%; }
+.rhythm-on #rhythmCanvas { display: block; }
+
+/* ── Fretboard ───────────────────────────────────── */
+.fret-panel {
+  background: #12122A; border: 2px solid #333; border-radius: 12px;
+  padding: 8px 8px 6px; flex-shrink: 0;
+}
+#fretCanvas { width: 100%; display: block; border-radius: 6px; }
+.fret-options { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.fret-options label { color: #CCC; font-size: 12px; }
+#tuningNotes { color: #8888AA; font-size: 11px; letter-spacing: 1px; }
+.fret-legend { display: flex; gap: 10px; font-size: 10px; color: #999; align-items: center; margin-left: auto; }
+.legend-dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; margin-right: 3px; vertical-align: -2px; }
+.legend-diamond { width: 9px; height: 9px; display: inline-block; margin-right: 4px; transform: rotate(45deg); vertical-align: -1px; }
 
 /* ── Mode Buttons ────────────────────────────────── */
-.mode-row { display: flex; gap: 6px; }
+.mode-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .mode-btn {
-  flex: 1; background: #2A2A3E; color: #E0E0E0; border: 2px solid #555; border-radius: 8px;
+  background: #2A2A3E; color: #E0E0E0; border: 2px solid #555; border-radius: 8px;
   font-size: 12px; font-weight: bold; height: 40px; cursor: pointer;
 }
 .mode-btn:active { background: #3A3A5E; }
@@ -63,6 +78,13 @@ select {
 }
 .checkbox-label { display: flex; align-items: center; gap: 4px; color: #CCC; font-size: 12px; cursor: pointer; }
 .checkbox-label input[type="checkbox"] { accent-color: #FF6B35; width: 18px; height: 18px; }
+.lock-btn {
+  height: 30px; background: #2A2A3E; border: 1px solid #555; color: #CCC;
+  border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer;
+  padding: 0 12px; line-height: 1; margin-left: 20px; white-space: nowrap;
+}
+.lock-btn:active { background: #3A3A5E; }
+.lock-btn.active { background: #3A2A1E; border-color: #FF6B35; color: #FFD700; }
 
 /* ── Step Grid ───────────────────────────────────── */
 .grid-container { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
@@ -90,6 +112,9 @@ select {
   font-size: 16px; font-weight: bold; height: 40px; cursor: pointer;
 }
 .transport-btn:active { background: #3A3A5E; }
+#arpBtn { color: #FFD700; }
+#arpBtn.flash { background: #3A2A1E; border-color: #FF6B35; }
+
 /* ── Sine Wave Row ───────────────────────────────── */
 .sine-row { display: flex; align-items: center; gap: 8px; }
 .sine-row label { font-size: 12px; white-space: nowrap; min-width: 55px; color: #CCC; }
@@ -131,21 +156,33 @@ select {
 .inner-section { display: flex; flex-direction: column; gap: 6px; padding: 8px 0; }
 
 /* ── Scale Toggles ───────────────────────────────── */
-.scale-toggles-grid {
-  display: flex; flex-wrap: wrap; gap: 4px 8px;
-}
+.scale-toggles-grid { display: flex; flex-wrap: wrap; gap: 4px 8px; }
 .scale-toggle-label {
   display: flex; align-items: center; gap: 3px; color: #CCC; font-size: 11px; cursor: pointer;
   white-space: nowrap;
 }
 .scale-toggle-label input[type="checkbox"] { accent-color: #FF6B35; width: 15px; height: 15px; }
+
+/* ── Cloud Sync ──────────────────────────────────── */
+.cloud-row { display: flex; gap: 6px; align-items: center; }
+.cloud-btn {
+  background: #2A2A3E; color: #E0E0E0; border: 1px solid #555; border-radius: 6px;
+  font-size: 12px; font-weight: bold; padding: 0 16px; height: 34px; cursor: pointer;
+}
+.cloud-btn:active { background: #3A3A5E; }
+.cloud-btn:disabled { opacity: 0.5; cursor: default; }
+.cloud-btn.primary { border-color: #FF6B35; color: #FFD700; }
+.cloud-status { font-size: 11px; color: #888; min-height: 14px; }
+.cloud-status.ok { color: #6FCF6F; }
+.cloud-status.err { color: #FF6B6B; }
+.cloud-status.busy { color: #00CED1; }
 </style>
 </head>
 <body>
 <div class="app">
 
   <!-- Practice Display (always visible) -->
-  <div class="display-frame">
+  <div class="display-frame" id="displayFrame">
     <div class="display-content">
       <div class="note-text-col">
         <div class="note-display" id="noteDisplay"></div>
@@ -153,7 +190,26 @@ select {
       </div>
       <canvas id="staffCanvas"></canvas>
     </div>
+    <canvas id="rhythmCanvas"></canvas>
     <div class="status-display" id="statusDisplay"></div>
+  </div>
+
+  <!-- Fretboard (always visible) -->
+  <div class="fret-panel" id="fretPanel">
+    <canvas id="fretCanvas"></canvas>
+    <div class="fret-options">
+      <label>Tuning:</label>
+      <select id="tuningCombo">
+        <option>Standard</option><option>Drop D</option><option>Open G</option>
+        <option>Open D</option><option>DADGAD</option>
+      </select>
+      <span id="tuningNotes"></span>
+      <div class="fret-legend">
+        <span><span class="legend-dot" style="background:#FF6B35"></span>Root</span>
+        <span><span class="legend-dot" style="background:#FFD700"></span>Tone</span>
+        <span><span class="legend-diamond" style="background:#00CED1"></span>Character</span>
+      </div>
+    </div>
   </div>
 
   <!-- Mode + Transport row -->
@@ -162,10 +218,13 @@ select {
     <button class="mode-btn" id="cagedModeBtn">CAGED</button>
     <button class="mode-btn" id="chordModeBtn">Chord</button>
     <button class="mode-btn" id="scaleModeBtn">Scale</button>
+    <button class="mode-btn" id="triadModeBtn">Triad</button>
+    <button class="mode-btn" id="rhythmModeBtn">Rhythm</button>
   </div>
   <div class="transport">
     <button class="transport-btn" id="startBtn">&#9654;</button>
     <button class="transport-btn" id="stopBtn">&#9632;</button>
+    <button class="transport-btn" id="arpBtn" title="Space / swipe up">&#9834; Arp</button>
   </div>
   <div class="sine-row">
     <label>Sine vol:</label>
@@ -190,8 +249,18 @@ select {
         <input type="range" id="beatRepeatSlider" min="1" max="16" value="8">
         <span class="val" id="beatRepeatVal">8</span>
       </div>
+      <div class="slider-row">
+        <label>Arp vol:</label>
+        <input type="range" id="arpVolSlider" min="0" max="1" step="0.01" value="0.5">
+        <span class="val" id="arpVolVal">0.50</span>
+      </div>
       <div class="control-row">
         <label class="checkbox-label"><input type="checkbox" id="flatsCheck"> Flats (Db/Gb)</label>
+        <label style="margin-left:8px;">Rhythm:</label>
+        <select id="rhythmDiffCombo">
+          <option>Easy</option><option selected>Medium</option><option>Hard</option>
+        </select>
+        <button id="lockBtn" class="lock-btn" title="Lock current prompt (keep repeating it)">&#128275; Repeat the Current</button>
         <span id="beatCountdown" style="margin-left:12px;font-weight:bold;color:#f90;font-size:1.1em;"></span>
       </div>
     </div>
@@ -274,8 +343,23 @@ select {
       <div class="scale-toggles-grid" id="scaleTogglesGrid"></div>
     </div>
   </div>
+
+  <!-- Cloud Sync (collapsible) -->
+  <div class="section-header collapsed" data-section="cloud">
+    Cloud Sync <span class="arrow">&#9660;</span>
+  </div>
+  <div class="section-body collapsed" id="cloudSection">
+    <div class="inner-section">
+      <div class="cloud-row">
+        <button class="cloud-btn primary" id="cloudSaveBtn">Save settings</button>
+        <button class="cloud-btn" id="cloudLoadBtn">Reload</button>
+      </div>
+      <div class="cloud-status" id="cloudStatus"></div>
+    </div>
+  </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ── Collapsible sections ───────────────────────────────────────────
 document.querySelectorAll('.section-header').forEach(header => {
@@ -362,6 +446,17 @@ function _noteDesc(noteName, octaveOffset) {
   return { pos: nd.pos + octaveOffset * 7, acc: nd.acc };
 }
 
+// Pitch class (0=C..11=B) of a note name in any spelling
+function pcOf(note) {
+  const m = ('' + note).match(/^[A-G][#b]?/);
+  if (!m) return 0;
+  return _CHROM_B.indexOf(_ENH[m[0]] || m[0]);
+}
+function nameOfPc(pc, flats) {
+  return (flats ? _CHROM_F : _CHROM_B)[((pc % 12) + 12) % 12];
+}
+function midiToFreq(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+
 // CAGED: C/G form = root,maj3rd,octave; A/E/D form = 5thBelow,root,maj3rd
 const CAGED_NOTE_INTERVALS = {
   'C form': [{s:0,q:'P'},{s:4,q:'M'},{s:12,q:'P'}],
@@ -400,6 +495,12 @@ const SCALE_INTERVALS = {
   'Whole Tone':       [{s:0,q:'P'},{s:2,q:'M'},{s:4,q:'M'},{s:6,q:'A'},{s:8,q:'A'},{s:10,q:'m'}],
   'Diminished':       [{s:0,q:'P'},{s:1,q:'m'},{s:3,q:'m'},{s:4,q:'M'},{s:6,q:'A'},{s:7,q:'P'},{s:9,q:'M'},{s:10,q:'m'}],
 };
+// The defining "character" semitone of each scale (cyan diamond on the fretboard)
+const SCALE_CHARACTER = {
+  'Major': 4, 'Minor': 3, 'Major Pentatonic': 4, 'Minor Pentatonic': 3,
+  'Harmonic Minor': 11, 'Melodic Minor': 11, 'Dorian': 9, 'Mixolydian': 10,
+  'Lydian': 6, 'Phrygian': 1, 'Altered': 8, 'Whole Tone': 8, 'Diminished': 1,
+};
 let scaleEnabled = {};
 SCALE_NAMES.forEach(name => scaleEnabled[name] = true);
 function getCagedNoteDescs(root, form) {
@@ -428,6 +529,166 @@ function getScaleNoteDescs(root, scaleType) {
   const minPos = descs.length ? Math.min(...descs.map(d=>d.pos)) : 0;
   const shift = minPos > 2 ? -7 : 0;
   return shift ? descs.map(d=>({pos:d.pos+shift, acc:d.acc})) : descs;
+}
+
+// ── Tunings ────────────────────────────────────────────────────────
+// MIDI of open strings, low (6th) to high (1st)
+const TUNINGS = {
+  'Standard': [40, 45, 50, 55, 59, 64],  // E A D G B E
+  'Drop D':   [38, 45, 50, 55, 59, 64],  // D A D G B E
+  'Open G':   [38, 43, 50, 55, 59, 62],  // D G D G B D
+  'Open D':   [38, 45, 50, 54, 57, 62],  // D A D F# A D
+  'DADGAD':   [38, 45, 50, 55, 57, 62],  // D A D G A D
+};
+const NUM_FRETS = 15;
+
+// ── Triad mode data ────────────────────────────────────────────────
+const TRIAD_QUALITIES = {
+  'Maj': [0, 4, 7], 'min': [0, 3, 7], 'dim': [0, 3, 6], 'aug': [0, 4, 8],
+};
+const TRIAD_QUALITY_NAMES = ['Maj', 'min', 'dim', 'aug'];
+const TRIAD_INVERSIONS = ['Root pos', '1st inv', '2nd inv'];
+// String sets as indices into tuning array (0 = low E string), low to high
+const TRIAD_STRING_SETS = [
+  { idx: [0, 1, 2], label: '6-5-4' },
+  { idx: [1, 2, 3], label: '5-4-3' },
+  { idx: [2, 3, 4], label: '4-3-2' },
+  { idx: [3, 4, 5], label: '3-2-1' },
+];
+// Semitone stack from root for each inversion: [bass, mid, top]
+function triadStack(quality, inversion) {
+  const [r, t, f] = TRIAD_QUALITIES[quality];
+  if (inversion === 0) return [r, t, f];
+  if (inversion === 1) return [t, f, r + 12];
+  return [f, r + 12, t + 12];
+}
+// Staff-spelling quality for a semitone interval above the root
+function _spellQ(s) {
+  const m = ((s % 12) + 12) % 12;
+  return m === 3 ? 'm' : m === 4 ? 'M' : m === 6 ? 'm' : m === 7 ? 'P' : m === 8 ? 'A' : 'P';
+}
+function getTriadNoteDescs(root, quality, inversion) {
+  const stack = triadStack(quality, inversion);
+  const descs = stack.map(s => {
+    const { noteName, octaveOffset } = _intervalNote(root, s, _spellQ(s));
+    return _noteDesc(noteName, octaveOffset);
+  }).filter(Boolean);
+  const minPos = descs.length ? Math.min(...descs.map(d => d.pos)) : 0;
+  const shift = minPos > 0 ? -7 : 0;
+  return shift ? descs.map(d => ({ pos: d.pos + shift, acc: d.acc })) : descs;
+}
+// Map a triad (root pc, quality, inversion) onto 3 specific strings of the
+// current tuning. Returns [{s, f, midi, role}] (role: 0=root,1=third,2=fifth)
+// or null if it cannot fit within NUM_FRETS.
+function computeTriadShape(rootPc, quality, inversion, setIdx, tuning) {
+  const stack = triadStack(quality, inversion);
+  const roles = [inversion % 3, (inversion + 1) % 3, (inversion + 2) % 3];
+  const strings = TRIAD_STRING_SETS[setIdx].idx;
+  const candidates = [];
+  // Try every octave of the bass note on the bass string
+  const bassPc = (rootPc + stack[0]) % 12;
+  for (let f0 = 0; f0 <= NUM_FRETS; f0++) {
+    if ((tuning[strings[0]] + f0) % 12 !== bassPc) continue;
+    const m0 = tuning[strings[0]] + f0;
+    const m1 = m0 + (stack[1] - stack[0]);
+    const m2 = m0 + (stack[2] - stack[0]);
+    const f1 = m1 - tuning[strings[1]];
+    const f2 = m2 - tuning[strings[2]];
+    if (f1 < 0 || f1 > NUM_FRETS || f2 < 0 || f2 > NUM_FRETS) continue;
+    const frets = [f0, f1, f2];
+    const spread = Math.max(...frets) - Math.min(...frets);
+    candidates.push({ frets, midis: [m0, m1, m2], spread, lo: Math.min(...frets) });
+  }
+  if (!candidates.length) return null;
+  // Prefer compact shapes in the lower neck
+  candidates.sort((a, b) => (a.spread - b.spread) || (a.lo - b.lo));
+  const best = candidates[0];
+  return strings.map((s, i) => ({ s, f: best.frets[i], midi: best.midis[i], role: roles[i] }));
+}
+
+// ── CAGED shapes (standard tuning) ─────────────────────────────────
+// Per form: anchor string index, min root fret, dot list as [stringIdx, fretOffset],
+// root positions marked separately. Offsets relative to root fret R on anchor string.
+const CAGED_SHAPES = {
+  'C form': { anchor: 1, minR: 3, dots: [[1,0],[2,-1],[3,-3],[4,-2],[5,-3]], roots: [[1,0],[4,-2]] },
+  'A form': { anchor: 1, minR: 0, dots: [[1,0],[2,2],[3,2],[4,2],[5,0]],     roots: [[1,0],[3,2]] },
+  'G form': { anchor: 0, minR: 3, dots: [[0,0],[1,-1],[2,-3],[3,-3],[4,-3],[5,0]], roots: [[0,0],[3,-3],[5,0]] },
+  'E form': { anchor: 0, minR: 0, dots: [[0,0],[1,2],[2,2],[3,1],[4,0],[5,0]],     roots: [[0,0],[2,2],[5,0]] },
+  'D form': { anchor: 2, minR: 0, dots: [[2,0],[3,2],[4,3],[5,2]],           roots: [[2,0],[4,3]] },
+};
+// Resolve a CAGED form for a root note → [{s, f, midi, isRoot}] or null
+function computeCagedShape(rootPc, form, tuning) {
+  const shape = CAGED_SHAPES[form];
+  if (!shape) return null;
+  const open = tuning[shape.anchor];
+  let R = -1;
+  for (let f = shape.minR; f <= NUM_FRETS; f++) {
+    if ((open + f) % 12 === rootPc) { R = f; break; }
+  }
+  if (R < 0) return null;
+  const maxOff = Math.max(...shape.dots.map(d => d[1]));
+  if (R + maxOff > NUM_FRETS && R - 12 >= shape.minR) R -= 12;
+  if (R + maxOff > NUM_FRETS) return null;
+  const rootSet = new Set(shape.roots.map(([s, o]) => s + ':' + o));
+  return shape.dots.map(([s, o]) => ({
+    s, f: R + o, midi: tuning[s] + R + o, isRoot: rootSet.has(s + ':' + o),
+  }));
+}
+
+// ── Rhythm mode data ───────────────────────────────────────────────
+// Cells are arrays of events {d: duration in 16th slots, r: true if rest}.
+// Simple-meter cells span 4 slots (one quarter-note beat);
+// compound-meter cells span 6 slots (one dotted-quarter beat).
+const RHYTHM_CELLS_SIMPLE = [
+  { w: [5, 4, 2], ev: [{d:4}] },                       // quarter
+  { w: [4, 4, 3], ev: [{d:2},{d:2}] },                 // two 8ths
+  { w: [1, 2, 2], ev: [{d:4,r:true}] },                // quarter rest
+  { w: [0, 2, 3], ev: [{d:2,r:true},{d:2}] },          // offbeat 8th
+  { w: [0, 1, 2], ev: [{d:2},{d:2,r:true}] },          // 8th + rest
+  { w: [0, 2, 3], ev: [{d:1},{d:1},{d:1},{d:1}] },     // four 16ths
+  { w: [0, 2, 3], ev: [{d:2},{d:1},{d:1}] },           // 8th + two 16ths
+  { w: [0, 2, 3], ev: [{d:1},{d:1},{d:2}] },           // two 16ths + 8th
+  { w: [0, 1, 2], ev: [{d:3},{d:1}] },                 // dotted 8th + 16th
+  { w: [0, 0, 2], ev: [{d:1},{d:3}] },                 // 16th + dotted 8th (snap)
+  { w: [0, 0, 2], ev: [{d:1},{d:2},{d:1}] },           // 16th-8th-16th syncopation
+];
+const RHYTHM_CELLS_COMPOUND = [
+  { w: [5, 3, 2], ev: [{d:6}] },                       // dotted quarter
+  { w: [4, 4, 3], ev: [{d:2},{d:2},{d:2}] },           // three 8ths
+  { w: [1, 2, 2], ev: [{d:6,r:true}] },                // dotted-quarter rest
+  { w: [0, 2, 3], ev: [{d:4},{d:2}] },                 // quarter + 8th
+  { w: [0, 2, 3], ev: [{d:2},{d:4}] },                 // 8th + quarter
+  { w: [0, 1, 2], ev: [{d:2,r:true},{d:2},{d:2}] },    // rest + two 8ths
+  { w: [0, 0, 2], ev: [{d:3},{d:3}] },                 // two dotted 8ths
+];
+const RHYTHM_DIFF_IDX = { 'Easy': 0, 'Medium': 1, 'Hard': 2 };
+// Simple comping chords for rhythm mode: [suffix, triad intervals]
+const RHYTHM_CHORDS = [
+  ['', [0, 4, 7]], ['m', [0, 3, 7]], ['7', [0, 4, 7, 10]],
+];
+function generateRhythmBar(meterName, diffName) {
+  const compound = meterName.endsWith('/8');
+  const pool = compound ? RHYTHM_CELLS_COMPOUND : RHYTHM_CELLS_SIMPLE;
+  const cellSlots = compound ? 6 : 4;
+  const totalSlots = METER_CONFIG[meterName].steps;
+  const nCells = Math.round(totalSlots / cellSlots);
+  const di = RHYTHM_DIFF_IDX[diffName] != null ? RHYTHM_DIFF_IDX[diffName] : 1;
+  const cells = [];
+  for (let i = 0; i < nCells; i++) {
+    const weights = pool.map(c => c.w[di]);
+    // First cell: avoid starting the bar with a rest so the downbeat is felt
+    if (i === 0) pool.forEach((c, j) => { if (c.ev[0].r) weights[j] = 0; });
+    let total = weights.reduce((a, b) => a + b, 0), pick = Math.random() * total;
+    let chosen = pool[0];
+    for (let j = 0; j < pool.length; j++) { pick -= weights[j]; if (pick <= 0) { chosen = pool[j]; break; } }
+    cells.push(chosen.ev);
+  }
+  // Flatten into events with absolute slot positions
+  const events = []; let slot = 0;
+  for (const cell of cells) {
+    for (const e of cell) { events.push({ slot, d: e.d, r: !!e.r }); slot += e.d; }
+  }
+  return { events, totalSlots, cellSlots };
 }
 
 // ── Audio Engine (Web Audio API) ───────────────────────────────────
@@ -565,6 +826,122 @@ class AudioEngine {
   }
 }
 
+// ── Subtractive Synth (arpeggio voice) ─────────────────────────────
+// Two detuned saws → lowpass with plucky filter envelope → amp envelope.
+let arpVolume = 0.5;
+const _arpVoices = [];  // live voices {oscs, amp} of the current arpeggio
+let _arpTimeouts = [];  // pending highlight timers
+
+function synthNote(midi, when, dur) {
+  const ctx = engine.ctx;
+  if (!ctx || ctx.state !== 'running' || arpVolume === 0) return;
+  const t = Math.max(when, ctx.currentTime);
+  const freq = midiToFreq(midi);
+  const peak = arpVolume * 0.32;
+
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.Q.value = 2.5;
+  const fStart = Math.min(7000, freq * 9);
+  const fEnd = Math.max(freq * 1.2, 220);
+  filter.frequency.setValueAtTime(fStart, t);
+  filter.frequency.setTargetAtTime(fEnd, t + 0.005, dur * 0.22);
+
+  // Pure ramp chain (no setTargetAtTime → ramp mixing, which is
+  // implementation-dependent): attack → exponential pluck decay → zero.
+  const amp = ctx.createGain();
+  amp.gain.setValueAtTime(0, t);
+  amp.gain.linearRampToValueAtTime(peak, t + 0.008);
+  amp.gain.exponentialRampToValueAtTime(Math.max(peak * 0.002, 1e-4), t + Math.max(dur * 0.9, 0.05));
+  amp.gain.linearRampToValueAtTime(0, t + dur);
+
+  filter.connect(amp); amp.connect(ctx.destination);
+
+  const voice = { oscs: [], amp };
+  for (const det of [-6, 6]) {
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(freq, t);
+    osc.detune.setValueAtTime(det, t);
+    osc.connect(filter);
+    osc.start(t); osc.stop(t + dur + 0.1);
+    voice.oscs.push(osc);
+  }
+  voice.oscs[0].onended = () => { const i = _arpVoices.indexOf(voice); if (i >= 0) _arpVoices.splice(i, 1); };
+  _arpVoices.push(voice);
+}
+
+function cancelArp() {
+  const ctx = engine.ctx;
+  const now = ctx ? ctx.currentTime : 0;
+  for (const v of _arpVoices.splice(0)) {
+    try {
+      // Click-free retrigger: hold the current level, fade fast, then stop.
+      if (v.amp.gain.cancelAndHoldAtTime) v.amp.gain.cancelAndHoldAtTime(now);
+      else v.amp.gain.cancelScheduledValues(now);
+      v.amp.gain.setTargetAtTime(0, now, 0.012);
+      for (const o of v.oscs) o.stop(now + 0.08);
+    } catch (e) {}
+  }
+  for (const id of _arpTimeouts.splice(0)) clearTimeout(id);
+  clearFretHighlight();
+}
+
+// Play a sequence of notes [{midi, s, f}] as an arpeggio that ends within
+// two bars = half of the sequencer cycle. Highlights fretboard dots in sync.
+function playArpeggio(notes) {
+  if (!notes || !notes.length) return;
+  cancelArp();
+  const ctx = engine.ctx;
+  if (!ctx || ctx.state !== 'running') return;
+  const s16 = getSixteenthDuration();
+  const total = (engine.seqNumSteps / 2) * s16;          // half the cycle
+  const spacing = total / Math.max(notes.length, 4);     // snappy for short arps
+  const start = ctx.currentTime + 0.03;
+  notes.forEach((n, i) => {
+    const when = start + i * spacing;
+    synthNote(n.midi, when, Math.min(spacing * 1.9, total - i * spacing));
+    const delay = Math.max(0, (when - ctx.currentTime) * 1000);
+    _arpTimeouts.push(setTimeout(() => {
+      if (n.s != null) setFretHighlight(n.s, n.f);
+    }, delay));
+  });
+  // Clear the last highlight when the arpeggio ends
+  _arpTimeouts.push(setTimeout(clearFretHighlight, (start - ctx.currentTime + total) * 1000 + 150));
+  arpBtn.classList.add('flash');
+  _arpTimeouts.push(setTimeout(() => arpBtn.classList.remove('flash'), 250));
+}
+
+// Play a rhythm bar on given midis (rhythm mode: chord stabs with the bar's rhythm).
+// Rendered double-time so the whole bar fits within half the sequencer cycle
+// (the "two bars" limit), and swing-aware so the feel matches the drums.
+function playRhythmArp(rhythm, chordNotes) {
+  if (!rhythm || !chordNotes || !chordNotes.length) return;
+  cancelArp();
+  const ctx = engine.ctx;
+  if (!ctx || ctx.state !== 'running') return;
+  const s16 = getSixteenthDuration();
+  const sr = swing / 100.0;
+  // Cumulative swung time of slot n, compressed 2x
+  const timeOfSlot = n => ((n >> 1) * 2 * s16 + (n % 2 ? 2 * s16 * sr : 0)) * 0.5;
+  const start = ctx.currentTime + 0.03;
+  for (const ev of rhythm.events) {
+    if (ev.r) continue;
+    const when = start + timeOfSlot(ev.slot);
+    const dur = Math.max(0.05, timeOfSlot(ev.slot + ev.d) - timeOfSlot(ev.slot));
+    chordNotes.forEach((n, i) => synthNote(n.midi, when + i * 0.008, dur));
+    const delay = Math.max(0, (when - ctx.currentTime) * 1000);
+    _arpTimeouts.push(setTimeout(() => {
+      const root = chordNotes[0];
+      if (root && root.s != null) setFretHighlight(root.s, root.f);
+    }, delay));
+  }
+  const total = timeOfSlot(rhythm.totalSlots);
+  _arpTimeouts.push(setTimeout(clearFretHighlight, (start - ctx.currentTime + total) * 1000 + 150));
+  arpBtn.classList.add('flash');
+  _arpTimeouts.push(setTimeout(() => arpBtn.classList.remove('flash'), 250));
+}
+
 // ── Staff Notation Canvas ──────────────────────────────────────────
 const STAFF_W = 150, STAFF_H = 120;
 function initStaffCanvas() {
@@ -651,7 +1028,7 @@ function drawStaffCanvas(input, isScale) {
         c.font = 'bold ' + (lineSpacing*1.4) + 'px serif';
         c.textAlign = 'right'; c.textBaseline = 'middle';
         c.fillStyle = noteColor;
-        c.fillText(nd.acc === '#' ? '\u266F' : '\u266D', noteX - rx - 2, noteY);
+        c.fillText(nd.acc === '#' ? '♯' : '♭', noteX - rx - 2, noteY);
       }
     }
     // No stem in scale mode
@@ -674,7 +1051,7 @@ function drawStaffCanvas(input, isScale) {
       if (nd.acc) {
         c.font = 'bold ' + (lineSpacing*1.6) + 'px serif';
         c.textAlign = 'right'; c.textBaseline = 'middle';
-        c.fillText(nd.acc === '#' ? '\u266F' : '\u266D', noteX - rx - 3, noteY);
+        c.fillText(nd.acc === '#' ? '♯' : '♭', noteX - rx - 3, noteY);
       }
     }
 
@@ -693,6 +1070,413 @@ function drawStaffCanvas(input, isScale) {
   }
 }
 
+// ── Rhythm Notation Canvas ─────────────────────────────────────────
+// Renders one bar of rhythm (from generateRhythmBar) as slash notation:
+// stems up, beams within each beat cell, simplified rests, playhead line.
+const RHY_H = 76;
+function drawRhythmBar(rhythm, playSlot) {
+  const canvas = document.getElementById('rhythmCanvas');
+  if (!canvas) return;
+  const frame = document.getElementById('displayFrame');
+  // frame content box: clientWidth minus 16px horizontal padding per side
+  const maxW = Math.max(120, Math.min(frame.clientWidth - 32, 640));
+  if (!rhythm) {
+    canvas.width = 0; canvas.height = 0;
+    canvas.style.width = '0px'; canvas.style.height = '0px';
+    return;
+  }
+  const { events, totalSlots, cellSlots } = rhythm;
+  const padL = 14, padR = 10;
+  const slotW = Math.min(30, (maxW - padL - padR) / totalSlots);
+  const W = Math.round(padL + padR + slotW * totalSlots);
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = W * dpr; canvas.height = RHY_H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = RHY_H + 'px';
+  const c = canvas.getContext('2d');
+  c.scale(dpr, dpr);
+
+  const baseY = 52;      // notation line
+  const beamY = 16;      // top of stems / beam height
+  const xOf = slot => padL + slot * slotW;
+
+  // Base line + beat gridlines + barlines
+  c.strokeStyle = '#555'; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(padL - 6, baseY); c.lineTo(W - padR + 6, baseY); c.stroke();
+  c.strokeStyle = '#333';
+  for (let s = cellSlots; s < totalSlots; s += cellSlots) {
+    c.beginPath(); c.moveTo(xOf(s), baseY - 26); c.lineTo(xOf(s), baseY + 8); c.stroke();
+  }
+  c.strokeStyle = '#888'; c.lineWidth = 2;
+  for (const bx of [padL - 6, W - padR + 6]) {
+    c.beginPath(); c.moveTo(bx, baseY - 30); c.lineTo(bx, baseY + 10); c.stroke();
+  }
+
+  // Playhead
+  if (playSlot != null && playSlot >= 0 && playSlot < totalSlots) {
+    c.strokeStyle = 'rgba(255,107,53,0.85)'; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(xOf(playSlot) + slotW * 0.5, 6); c.lineTo(xOf(playSlot) + slotW * 0.5, RHY_H - 6); c.stroke();
+  }
+
+  const isCurrent = ev => playSlot != null && playSlot >= ev.slot && playSlot < ev.slot + ev.d;
+  const headRx = Math.min(slotW * 0.42, 6.5), headRy = headRx * 0.72;
+
+  // Build beam groups: consecutive beamable notes (d<=3, not rest) within one cell
+  const groups = [];
+  let cur = [];
+  for (const ev of events) {
+    const cellIdx = Math.floor(ev.slot / cellSlots);
+    const beamable = !ev.r && ev.d <= 3;
+    if (beamable && cur.length && Math.floor(cur[cur.length - 1].slot / cellSlots) === cellIdx) cur.push(ev);
+    else { if (cur.length) groups.push(cur); cur = beamable ? [ev] : []; }
+  }
+  if (cur.length) groups.push(cur);
+  const inGroup = new Map();
+  groups.forEach(g => { if (g.length > 1) g.forEach(ev => inGroup.set(ev, g)); });
+
+  // Draw events
+  for (const ev of events) {
+    const x = xOf(ev.slot) + headRx + 1;
+    const col = isCurrent(ev) ? '#FFD700' : '#E0E0E0';
+    c.fillStyle = col; c.strokeStyle = col;
+    if (ev.r) { drawRest(c, x, baseY, ev.d, col); continue; }
+    // Head (slash style)
+    c.beginPath(); c.ellipse(x, baseY, headRx, headRy, -0.35, 0, Math.PI * 2); c.fill();
+    // Dot for dotted values (3 = dotted 8th, 6 = dotted quarter)
+    if (ev.d === 3 || ev.d === 6) {
+      c.beginPath(); c.arc(x + headRx + 4, baseY - 3, 2, 0, Math.PI * 2); c.fill();
+    }
+    // Stem
+    c.lineWidth = 1.6;
+    c.beginPath(); c.moveTo(x + headRx - 0.5, baseY - 2); c.lineTo(x + headRx - 0.5, beamY); c.stroke();
+    // Flags for isolated beamable notes
+    if (!inGroup.has(ev) && ev.d <= 3) {
+      const flags = ev.d === 1 ? 2 : 1;
+      c.lineWidth = 1.8;
+      for (let f = 0; f < flags; f++) {
+        c.beginPath();
+        c.moveTo(x + headRx - 0.5, beamY + f * 5);
+        c.bezierCurveTo(x + headRx + 7, beamY + 4 + f * 5, x + headRx + 8, beamY + 9 + f * 5, x + headRx + 4, beamY + 14 + f * 5);
+        c.stroke();
+      }
+    }
+  }
+
+  // Draw beams
+  c.lineWidth = 3;
+  for (const g of groups) {
+    if (g.length < 2) continue;
+    const stemX = ev => xOf(ev.slot) + headRx + 1 + headRx - 0.5;
+    const x0 = stemX(g[0]), x1 = stemX(g[g.length - 1]);
+    const anyCur = g.some(isCurrent);
+    c.strokeStyle = anyCur ? '#FFD700' : '#E0E0E0';
+    // Primary beam across the whole group
+    c.beginPath(); c.moveTo(x0, beamY + 1.5); c.lineTo(x1, beamY + 1.5); c.stroke();
+    // Secondary beams for 16ths: continuous across runs, stub when isolated
+    for (let i = 0; i < g.length; i++) {
+      if (g[i].d !== 1) continue;
+      const xs = stemX(g[i]);
+      const leftIs16 = i > 0 && g[i - 1].d === 1;
+      const rightIs16 = i + 1 < g.length && g[i + 1].d === 1;
+      if (rightIs16) {
+        c.beginPath(); c.moveTo(xs, beamY + 6.5); c.lineTo(stemX(g[i + 1]), beamY + 6.5); c.stroke();
+      } else if (!leftIs16) {
+        // Stub toward the nearest neighbour
+        const dir = i > 0 ? -1 : 1;
+        c.beginPath(); c.moveTo(xs, beamY + 6.5); c.lineTo(xs + dir * slotW * 0.7, beamY + 6.5); c.stroke();
+      }
+    }
+  }
+}
+function drawRest(c, x, baseY, d, col) {
+  c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 2.2;
+  if (d >= 4) {
+    // Quarter rest: simplified zigzag (+ dot if dotted-quarter, d=6)
+    c.beginPath();
+    c.moveTo(x - 3, baseY - 22);
+    c.lineTo(x + 3, baseY - 15);
+    c.lineTo(x - 2, baseY - 9);
+    c.quadraticCurveTo(x + 5, baseY - 6, x + 2, baseY - 1);
+    c.stroke();
+    if (d === 6) { c.beginPath(); c.arc(x + 8, baseY - 12, 2, 0, Math.PI * 2); c.fill(); }
+  } else {
+    // 8th / 16th rest: ball(s) + diagonal stem
+    const balls = d === 1 ? 2 : 1;
+    for (let b = 0; b < balls; b++) {
+      c.beginPath(); c.arc(x - 2 - b * 2, baseY - 16 + b * 6, 2.4, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.moveTo(x - 2 - b * 2, baseY - 14 + b * 6);
+      c.quadraticCurveTo(x + 2, baseY - 13 + b * 6, x + 4 - b, baseY - 16 + b * 6);
+      c.stroke();
+    }
+    c.beginPath(); c.moveTo(x + 4, baseY - 16); c.lineTo(x - 1, baseY - 2); c.stroke();
+    if (d === 3) { c.beginPath(); c.arc(x + 7, baseY - 10, 2, 0, Math.PI * 2); c.fill(); }
+  }
+}
+
+// ── Fretboard Renderer ─────────────────────────────────────────────
+// Realistic 2D neck: rosewood board + grain, bone nut, metallic frets with
+// true logarithmic spacing, pearl inlays, gauge-graded strings (wound look
+// on the bass strings). Low E at the bottom (TAB convention), nut at left.
+const fretCanvas = document.getElementById('fretCanvas');
+const fretCtx = fretCanvas.getContext('2d');
+let currentTuning = 'Standard';
+let fretMarkers = [];          // [{s, f, type:'root'|'tone'|'char', label}]
+let fretHighlight = null;      // {s, f, t0} arpeggio pulse
+let _fretBase = null;          // cached base-layer canvas
+let _fretGeom = null;          // layout geometry
+
+// Deterministic pseudo-random for wood grain (stable across redraws)
+function _grainRand(seed) { let x = Math.sin(seed * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+
+function computeFretGeometry(W, H) {
+  const padT = 10, padB = 24, labelW = 26;
+  const nutX = labelW + 8;
+  const boardR = W - 6;
+  const d = n => 1 - Math.pow(2, -n / 12);
+  const dMax = d(NUM_FRETS);
+  const fretX = []; // fretX[n] = x of fret wire n (0 = nut)
+  for (let n = 0; n <= NUM_FRETS; n++) fretX.push(nutX + (d(n) / dMax) * (boardR - nutX));
+  const stringY = []; // index 0 = low E (bottom) .. 5 = high E (top)
+  for (let i = 0; i < 6; i++) stringY.push(H - padB - i * (H - padT - padB) / 5);
+  return { W, H, padT, padB, nutX, boardR, fretX, stringY };
+}
+// Center x of a fretted note (between the previous and current fret wires)
+function noteX(g, f) {
+  if (f === 0) return g.nutX - 13;
+  return (g.fretX[f - 1] + g.fretX[f]) / 2;
+}
+
+function buildFretBase(W, H, tuning) {
+  const g = computeFretGeometry(W, H);
+  const cv = document.createElement('canvas');
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = W * dpr; cv.height = H * dpr;
+  const c = cv.getContext('2d');
+  c.scale(dpr, dpr);
+  const { padT, padB, nutX, boardR, fretX, stringY } = g;
+  const boardTop = padT - 4, boardBot = H - padB + 8;
+
+  // Headstock side (behind labels)
+  c.fillStyle = '#0E0E22';
+  c.fillRect(0, 0, W, H);
+
+  // Rosewood board
+  const wood = c.createLinearGradient(0, boardTop, 0, boardBot);
+  wood.addColorStop(0, '#4A2E1D');
+  wood.addColorStop(0.18, '#3A2316');
+  wood.addColorStop(0.5, '#54341F');
+  wood.addColorStop(0.82, '#3A2316');
+  wood.addColorStop(1, '#2E1B10');
+  c.fillStyle = wood;
+  c.fillRect(nutX, boardTop, boardR - nutX, boardBot - boardTop);
+
+  // Wood grain: faint wavy horizontal streaks (deterministic)
+  c.save();
+  c.beginPath(); c.rect(nutX, boardTop, boardR - nutX, boardBot - boardTop); c.clip();
+  for (let i = 0; i < 22; i++) {
+    const y0 = boardTop + _grainRand(i) * (boardBot - boardTop);
+    const amp = 1 + _grainRand(i + 50) * 2.5;
+    c.strokeStyle = `rgba(${_grainRand(i+99) > 0.5 ? '20,10,5' : '120,75,45'},${0.05 + _grainRand(i + 31) * 0.08})`;
+    c.lineWidth = 0.7 + _grainRand(i + 77) * 1.6;
+    c.beginPath();
+    for (let x = nutX; x <= boardR; x += 14) {
+      const y = y0 + Math.sin(x * 0.018 + i * 3.1) * amp;
+      x === nutX ? c.moveTo(x, y) : c.lineTo(x, y);
+    }
+    c.stroke();
+  }
+  c.restore();
+
+  // Pearl inlays
+  const midY = (boardTop + boardBot) / 2;
+  const inlayR = Math.min(7, (boardBot - boardTop) * 0.075);
+  c.fillStyle = 'rgba(216,208,192,0.8)';
+  for (const f of [3, 5, 7, 9, 15]) {
+    if (f > NUM_FRETS) continue;
+    c.beginPath(); c.arc(noteX(g, f), midY, inlayR, 0, Math.PI * 2); c.fill();
+  }
+  if (NUM_FRETS >= 12) {
+    const x12 = noteX(g, 12);
+    const off = (boardBot - boardTop) * 0.22;
+    c.beginPath(); c.arc(x12, midY - off, inlayR, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(x12, midY + off, inlayR, 0, Math.PI * 2); c.fill();
+  }
+
+  // Fret wires (metallic)
+  for (let n = 1; n <= NUM_FRETS; n++) {
+    const x = fretX[n];
+    const fg = c.createLinearGradient(x - 2, 0, x + 2, 0);
+    fg.addColorStop(0, '#6A6A72');
+    fg.addColorStop(0.5, '#D8D8E0');
+    fg.addColorStop(1, '#55555D');
+    c.fillStyle = fg;
+    c.fillRect(x - 1.6, boardTop, 3.2, boardBot - boardTop);
+  }
+  // Nut (bone)
+  const ng = c.createLinearGradient(nutX - 4, 0, nutX + 4, 0);
+  ng.addColorStop(0, '#B8AE98');
+  ng.addColorStop(0.5, '#EFE6D2');
+  ng.addColorStop(1, '#A89E88');
+  c.fillStyle = ng;
+  c.fillRect(nutX - 4, boardTop - 2, 8, boardBot - boardTop + 4);
+
+  // Strings: low E (i=0, bottom, thick & wound) → high E (thin, plain)
+  const tuningArr = TUNINGS[tuning];
+  const stdArr = TUNINGS['Standard'];
+  for (let i = 0; i < 6; i++) {
+    const y = stringY[i];
+    const wdt = 3.2 - i * 0.42;
+    // shadow
+    c.strokeStyle = 'rgba(0,0,0,0.45)';
+    c.lineWidth = wdt;
+    c.beginPath(); c.moveTo(nutX - 4, y + 1.5); c.lineTo(boardR, y + 1.5); c.stroke();
+    // string body
+    c.strokeStyle = i < 3 ? '#B9A98C' : '#C9C9D4';   // bronze wound vs plain steel
+    c.lineWidth = wdt;
+    c.beginPath(); c.moveTo(nutX - 4, y); c.lineTo(boardR, y); c.stroke();
+    // winding hint on wound strings
+    if (i < 3) {
+      c.strokeStyle = 'rgba(60,45,25,0.5)';
+      c.lineWidth = wdt;
+      c.setLineDash([1, 2.2]);
+      c.beginPath(); c.moveTo(nutX - 4, y); c.lineTo(boardR, y); c.stroke();
+      c.setLineDash([]);
+    }
+    // highlight sheen
+    c.strokeStyle = 'rgba(255,255,255,0.35)';
+    c.lineWidth = Math.max(0.6, wdt * 0.25);
+    c.beginPath(); c.moveTo(nutX - 4, y - wdt * 0.25); c.lineTo(boardR, y - wdt * 0.25); c.stroke();
+
+    // Open-string label (orange when retuned away from standard)
+    const retuned = tuningArr[i] !== stdArr[i];
+    c.fillStyle = retuned ? '#FF6B35' : '#9999BB';
+    c.font = 'bold 11px -apple-system, sans-serif';
+    c.textAlign = 'right'; c.textBaseline = 'middle';
+    c.fillText(nameOfPc(tuningArr[i] % 12, false), nutX - 22, y);
+  }
+
+  // Fret numbers
+  c.fillStyle = '#777';
+  c.font = '9px -apple-system, sans-serif';
+  c.textAlign = 'center'; c.textBaseline = 'top';
+  for (const f of [3, 5, 7, 9, 12, 15]) {
+    if (f > NUM_FRETS) continue;
+    c.fillText(String(f), noteX(g, f), boardBot + 4);
+  }
+  return { canvas: cv, geom: g };
+}
+
+function sizeFretCanvas() {
+  const panel = document.getElementById('fretPanel');
+  const W = Math.max(280, panel.clientWidth - 16);
+  const H = Math.round(Math.min(210, Math.max(140, W * 0.26)));
+  const dpr = window.devicePixelRatio || 1;
+  fretCanvas.width = W * dpr; fretCanvas.height = H * dpr;
+  fretCanvas.style.width = W + 'px'; fretCanvas.style.height = H + 'px';
+  fretCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  _fretBase = null; // size changed → rebuild base layer
+  drawFretboard();
+}
+
+function drawFretboard() {
+  const dpr = window.devicePixelRatio || 1;
+  const W = fretCanvas.width / dpr, H = fretCanvas.height / dpr;
+  if (W < 10) return;
+  if (!_fretBase || _fretBase.W !== W || _fretBase.H !== H || _fretBase.tuning !== currentTuning) {
+    const built = buildFretBase(W, H, currentTuning);
+    _fretBase = { W, H, tuning: currentTuning, canvas: built.canvas };
+    _fretGeom = built.geom;
+  }
+  fretCtx.clearRect(0, 0, W, H);
+  fretCtx.drawImage(_fretBase.canvas, 0, 0, W, H);
+  const g = _fretGeom;
+
+  const stringGap = (g.stringY[0] - g.stringY[5]) / 5;
+  const baseR = Math.min(stringGap * 0.46, 10);
+
+  for (const dot of fretMarkers) {
+    if (dot.f < 0 || dot.f > NUM_FRETS) continue;
+    const x = noteX(g, dot.f), y = g.stringY[dot.s];
+    const r = dot.type === 'root' ? baseR : baseR * 0.88;
+    fretCtx.save();
+    if (dot.type === 'char') {
+      // Character note: cyan diamond
+      fretCtx.translate(x, y); fretCtx.rotate(Math.PI / 4);
+      fretCtx.fillStyle = '#00CED1';
+      fretCtx.fillRect(-r * 0.78, -r * 0.78, r * 1.56, r * 1.56);
+      fretCtx.strokeStyle = 'rgba(255,255,255,0.85)'; fretCtx.lineWidth = 1.2;
+      fretCtx.strokeRect(-r * 0.78, -r * 0.78, r * 1.56, r * 1.56);
+      fretCtx.rotate(-Math.PI / 4);
+      fretCtx.fillStyle = '#062A2A';
+    } else {
+      fretCtx.translate(x, y);
+      fretCtx.beginPath(); fretCtx.arc(0, 0, r, 0, Math.PI * 2);
+      fretCtx.fillStyle = dot.type === 'root' ? '#FF6B35' : '#FFD700';
+      fretCtx.fill();
+      if (dot.type === 'root') {
+        fretCtx.strokeStyle = '#FFF'; fretCtx.lineWidth = 2;
+        fretCtx.stroke();
+      } else {
+        fretCtx.strokeStyle = 'rgba(0,0,0,0.4)'; fretCtx.lineWidth = 1;
+        fretCtx.stroke();
+      }
+      fretCtx.fillStyle = dot.type === 'root' ? '#FFF' : '#3A2A00';
+    }
+    if (dot.label) {
+      fretCtx.font = 'bold ' + Math.round(r * 1.05) + 'px -apple-system, sans-serif';
+      fretCtx.textAlign = 'center'; fretCtx.textBaseline = 'middle';
+      fretCtx.fillText(dot.label, 0, 0.5);
+    }
+    fretCtx.restore();
+  }
+
+  // Arpeggio highlight pulse
+  if (fretHighlight) {
+    const age = performance.now() - fretHighlight.t0;
+    const x = noteX(g, fretHighlight.f), y = g.stringY[fretHighlight.s];
+    const k = Math.min(age / 450, 1);
+    fretCtx.beginPath();
+    fretCtx.arc(x, y, baseR * (1 + k * 1.4), 0, Math.PI * 2);
+    fretCtx.strokeStyle = `rgba(255,255,255,${0.9 * (1 - k)})`;
+    fretCtx.lineWidth = 3;
+    fretCtx.stroke();
+    fretCtx.beginPath();
+    fretCtx.arc(x, y, baseR * 0.95, 0, Math.PI * 2);
+    fretCtx.fillStyle = 'rgba(255,255,255,0.92)';
+    fretCtx.fill();
+    fretCtx.fillStyle = '#1A1A2E';
+    const lbl = nameOfPc((TUNINGS[currentTuning][fretHighlight.s] + fretHighlight.f) % 12, useFlats);
+    fretCtx.font = 'bold ' + Math.round(baseR) + 'px -apple-system, sans-serif';
+    fretCtx.textAlign = 'center'; fretCtx.textBaseline = 'middle';
+    fretCtx.fillText(lbl, x, y + 0.5);
+  }
+}
+
+let _fretAnimId = null;
+function _fretAnimLoop() {
+  drawFretboard();
+  if (fretHighlight && performance.now() - fretHighlight.t0 < 500) {
+    _fretAnimId = requestAnimationFrame(_fretAnimLoop);
+  } else { _fretAnimId = null; }
+}
+function setFretHighlight(s, f) {
+  fretHighlight = { s, f, t0: performance.now() };
+  if (!_fretAnimId) _fretAnimId = requestAnimationFrame(_fretAnimLoop);
+}
+function clearFretHighlight() {
+  if (fretHighlight) { fretHighlight = null; drawFretboard(); }
+}
+
+// All fretboard positions of a pitch class in the current tuning
+function allPositionsOfPc(pc, tuning) {
+  const out = [];
+  for (let s = 0; s < 6; s++) {
+    for (let f = 0; f <= NUM_FRETS; f++) {
+      if ((tuning[s] + f) % 12 === pc) out.push({ s, f });
+    }
+  }
+  return out;
+}
+
 // ── App State ──────────────────────────────────────────────────────
 const engine = new AudioEngine();
 let bpm = 70.0, doubleTime = false, meter = "4/4", swing = 50, useFlats = false;
@@ -700,6 +1484,9 @@ let playing = false, paused = false, currentStep = 0, prevHighlight = -1;
 let patterns = {}; for (const t of TRACK_INFO) patterns[t.name] = new Array(24).fill(false);
 let practiceMode = null, prerollValue = 5, beatRepeatValue = 8;
 let kickCounter = 0, prerollDone = false, currentNote = "", currentExtra = "";
+let rhythmDifficulty = 'Medium';
+let triadState = null;   // {root, quality, inv, set, shape}
+let rhythmState = null;  // {rhythm, chordRoot, chordSuffix, chordNotes}
 let presets = [{
   name: "TakeFive", bpm: "172.0", double_time: "0", meter: "5/4", swing: "50",
   "O-Hat": "10001010100000000000", "C-Hat": "00000000000010001000",
@@ -712,13 +1499,21 @@ const trackVolumes = { "Kick": 2, "Snare": 2, "C-Hat": 2, "O-Hat": 2 };
 const $ = id => document.getElementById(id);
 const bpmSpin = $('bpmSpin'), bpmSlider = $('bpmSlider'), dtCheck = $('dtCheck');
 const meterCombo = $('meterCombo'), swingSlider = $('swingSlider'), swingVal = $('swingVal');
-const gridContainer = $('gridContainer'), startBtn = $('startBtn'), stopBtn = $('stopBtn');
+const gridContainer = $('gridContainer'), startBtn = $('startBtn'), stopBtn = $('stopBtn'), arpBtn = $('arpBtn');
 const sineSlider = $('sineSlider'), sineVal = $('sineVal'), sineBtn = $('sineBtn');
 const presetNameEdit = $('presetNameEdit'), presetList = $('presetList');
 const noteDisplay = $('noteDisplay'), extraDisplay = $('extraDisplay'), statusDisplay = $('statusDisplay');
-const noteModeBtn = $('noteModeBtn'), cagedModeBtn = $('cagedModeBtn'), chordModeBtn = $('chordModeBtn'), scaleModeBtn = $('scaleModeBtn');
 const prerollSlider = $('prerollSlider'), prerollValEl = $('prerollVal');
 const beatRepeatSlider = $('beatRepeatSlider'), beatRepeatValEl = $('beatRepeatVal');
+const arpVolSlider = $('arpVolSlider'), arpVolVal = $('arpVolVal');
+const tuningCombo = $('tuningCombo'), tuningNotesEl = $('tuningNotes');
+const rhythmDiffCombo = $('rhythmDiffCombo');
+const lockBtn = $('lockBtn');
+const displayFrame = $('displayFrame');
+const MODE_BTNS = {
+  note: $('noteModeBtn'), caged: $('cagedModeBtn'), chord: $('chordModeBtn'),
+  scale: $('scaleModeBtn'), triad: $('triadModeBtn'), rhythm: $('rhythmModeBtn'),
+};
 
 // ── Helpers ────────────────────────────────────────────────────────
 function getPracticeNotes() { return useFlats ? _CHROM_F : CHROMATIC; }
@@ -734,6 +1529,10 @@ function applyDefaultPatterns() {
 }
 function patternToStr(tn, n) { return patterns[tn].slice(0, n).map(v => v ? "1" : "0").join(""); }
 function strToPattern(s) { const p = s.split("").map(c => c === "1"); while (p.length < 24) p.push(false); return p; }
+function setFretMarkers(dots) { fretMarkers = dots || []; drawFretboard(); }
+function updateTuningNotes() {
+  tuningNotesEl.textContent = TUNINGS[currentTuning].map(m => nameOfPc(m % 12, false)).join(' ');
+}
 
 // ── Build Grid ─────────────────────────────────────────────────────
 function buildGrid() {
@@ -783,6 +1582,8 @@ function onStepUpdate(step) {
   if (prevHighlight >= 0 && prevHighlight < n) for (const r of stepButtons) if (prevHighlight < r.length) r[prevHighlight].classList.remove('current');
   if (step >= 0 && step < n) for (const r of stepButtons) if (step < r.length) r[step].classList.add('current');
   prevHighlight = step;
+  // Rhythm-mode playhead follows the sequencer (slots == steps)
+  if (practiceMode === 'rhythm' && rhythmState && prerollDone) drawRhythmBar(rhythmState.rhythm, step);
   if (step < patterns["Kick"].length && patterns["Kick"][step]) onKickHit();
 }
 function clearHighlight() { for (const r of stepButtons) for (const b of r) b.classList.remove('current'); prevHighlight = -1; }
@@ -859,7 +1660,7 @@ const unlockAll = () => {
 // touchstart on key buttons: initContext + resume synchronously within the gesture.
 // This is the critical iOS path — resume() must be called in the synchronous part
 // of a user-gesture handler; async/await breaks that guarantee.
-[startBtn, noteModeBtn, cagedModeBtn, chordModeBtn, scaleModeBtn].forEach(btn => {
+[startBtn, arpBtn, ...Object.values(MODE_BTNS)].forEach(btn => {
   btn.addEventListener('touchstart', () => {
     engine.initContext();
     if (engine.ctx && engine.ctx.state === 'suspended') engine.ctx.resume().catch(console.error);
@@ -880,6 +1681,16 @@ stopBtn.addEventListener('click', () => {
 
 // ── Practice Modes ─────────────────────────────────────────────────
 function randNote(exc) { const c = getPracticeNotes().filter(n => n !== exc); return c[Math.floor(Math.random() * c.length)]; }
+function getSimpleChordDescs(root, suffix) {
+  const intervals = (RHYTHM_CHORDS.find(rc => rc[0] === suffix) || RHYTHM_CHORDS[0])[1];
+  const descs = intervals.map(s => {
+    const { noteName, octaveOffset } = _intervalNote(root, s, _spellQ(s));
+    return _noteDesc(noteName, octaveOffset);
+  }).filter(Boolean);
+  const minPos = descs.length ? Math.min(...descs.map(d => d.pos)) : 0;
+  const shift = minPos > 0 ? -7 : 0;
+  return shift ? descs.map(d => ({ pos: d.pos + shift, acc: d.acc })) : descs;
+}
 function drawPracticeStaff() {
   if (practiceMode === "note") { drawStaffCanvas(currentNote); }
   else if (practiceMode === "caged") { drawStaffCanvas(getCagedNoteDescs(currentNote, currentExtra)); }
@@ -889,49 +1700,276 @@ function drawPracticeStaff() {
   } else if (practiceMode === "scale") {
     const m = currentNote.match(/^([A-G][#b]?)\s(.+)$/);
     if (m) drawStaffCanvas(getScaleNoteDescs(m[1], m[2]), true);
+  } else if (practiceMode === "triad" && triadState) {
+    drawStaffCanvas(getTriadNoteDescs(triadState.root, triadState.quality, triadState.inv));
+  } else if (practiceMode === "rhythm" && rhythmState) {
+    drawStaffCanvas(getSimpleChordDescs(rhythmState.chordRoot, rhythmState.chordSuffix));
+  } else {
+    drawStaffCanvas("");
   }
 }
+
+// ── Fretboard content markers ──────────────────────────────────────
+function updateFretboardForContent() {
+  const tuning = TUNINGS[currentTuning];
+  if (!practiceMode || !prerollDone || (!currentNote && !rhythmState)) { setFretMarkers([]); return; }
+  const dots = [];
+  const pcLabel = pc => nameOfPc(pc, useFlats);
+  const addAllPositions = (pcs, rootPc, charPc) => {
+    for (const { pc, type } of pcs.map(pc2 => ({
+      pc: ((pc2 % 12) + 12) % 12,
+      type: ((pc2 - rootPc) % 12 + 12) % 12 === 0 ? 'root' : (charPc != null && pc2 % 12 === charPc % 12 ? 'char' : 'tone'),
+    }))) {
+      for (const pos of allPositionsOfPc(pc, tuning)) dots.push({ s: pos.s, f: pos.f, type, label: pcLabel(pc) });
+    }
+  };
+
+  if (practiceMode === 'note') {
+    const pc = pcOf(currentNote);
+    for (const pos of allPositionsOfPc(pc, tuning)) dots.push({ s: pos.s, f: pos.f, type: 'root', label: pcLabel(pc) });
+  } else if (practiceMode === 'caged') {
+    const rootPc = pcOf(currentNote);
+    const shape = currentTuning === 'Standard' ? computeCagedShape(rootPc, currentExtra, tuning) : null;
+    if (shape) {
+      for (const d of shape) dots.push({ s: d.s, f: d.f, type: d.isRoot ? 'root' : 'tone', label: pcLabel((tuning[d.s] + d.f) % 12) });
+    } else {
+      // Alternate tunings: CAGED shapes don't transfer — show the major triad everywhere
+      addAllPositions([rootPc, rootPc + 4, rootPc + 7], rootPc, null);
+    }
+  } else if (practiceMode === 'chord') {
+    const m = currentNote.match(/^([A-G][#b]?)(.+)$/);
+    if (m) {
+      const rootPc = pcOf(m[1]);
+      const pcs = [rootPc, ...(CHORD_NOTE_INTERVALS[m[2]] || []).map(iv => (rootPc + iv.s) % 12)];
+      addAllPositions([...new Set(pcs)], rootPc, null);
+    }
+  } else if (practiceMode === 'scale') {
+    const m = currentNote.match(/^([A-G][#b]?)\s(.+)$/);
+    if (m) {
+      const rootPc = pcOf(m[1]);
+      const charPc = SCALE_CHARACTER[m[2]] != null ? (rootPc + SCALE_CHARACTER[m[2]]) % 12 : null;
+      const pcs = [...new Set((SCALE_INTERVALS[m[2]] || []).map(iv => (rootPc + iv.s) % 12))];
+      addAllPositions(pcs, rootPc, charPc);
+    }
+  } else if (practiceMode === 'triad' && triadState && triadState.shape) {
+    for (const d of triadState.shape) {
+      dots.push({ s: d.s, f: d.f, type: d.role === 0 ? 'root' : 'tone', label: pcLabel(d.midi % 12) });
+    }
+  } else if (practiceMode === 'rhythm' && rhythmState) {
+    const rootPc = pcOf(rhythmState.chordRoot);
+    const intervals = (RHYTHM_CHORDS.find(rc => rc[0] === rhythmState.chordSuffix) || RHYTHM_CHORDS[0])[1];
+    addAllPositions([...new Set(intervals.map(s => (rootPc + s) % 12))], rootPc, null);
+  }
+  setFretMarkers(dots);
+}
+
+// ── Content generation ─────────────────────────────────────────────
 function pickNewContent() {
   if (practiceMode === "note") { currentNote = randNote(currentNote); noteDisplay.textContent = currentNote; extraDisplay.textContent = ""; statusDisplay.textContent = ""; }
   else if (practiceMode === "caged") { currentNote = randNote(currentNote); currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; statusDisplay.textContent = ""; }
   else if (practiceMode === "chord") { const pn = getPracticeNotes(); const r = pn[Math.floor(Math.random() * pn.length)], ct = CHORD_TYPES[Math.floor(Math.random() * CHORD_TYPES.length)]; currentNote = r + ct; currentExtra = "= " + getRootlessChord(r, ct); noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; statusDisplay.textContent = ""; }
   else if (practiceMode === "scale") { const pn = getPracticeNotes(); const r = pn[Math.floor(Math.random() * pn.length)]; const enabled = SCALE_NAMES.filter(n => scaleEnabled[n]); if (!enabled.length) return; const st = enabled[Math.floor(Math.random() * enabled.length)]; currentNote = r + " " + st; currentExtra = ""; noteDisplay.textContent = r; extraDisplay.textContent = st; statusDisplay.textContent = ""; }
+  else if (practiceMode === "triad") { pickNewTriad(); }
+  else if (practiceMode === "rhythm") { pickNewRhythm(); }
   drawPracticeStaff();
+  updateFretboardForContent();
 }
-function updateBeatCountdown() { const cd = $('beatCountdown'); if (!practiceMode || !prerollDone) { cd.textContent = ''; return; } cd.textContent = 'UntilNext: ' + (beatRepeatValue - kickCounter); }
+function pickNewTriad() {
+  const pn = getPracticeNotes();
+  const tuning = TUNINGS[currentTuning];
+  for (let tries = 0; tries < 40; tries++) {
+    const root = pn[Math.floor(Math.random() * pn.length)];
+    const quality = TRIAD_QUALITY_NAMES[Math.floor(Math.random() * TRIAD_QUALITY_NAMES.length)];
+    const inv = Math.floor(Math.random() * 3);
+    const set = Math.floor(Math.random() * TRIAD_STRING_SETS.length);
+    // Skip an exact repeat of the previous prompt
+    if (triadState && triadState.root === root && triadState.quality === quality &&
+        triadState.inv === inv && triadState.set === set) continue;
+    const shape = computeTriadShape(pcOf(root), quality, inv, set, tuning);
+    if (!shape) continue;
+    triadState = { root, quality, inv, set, shape };
+    currentNote = root + " " + quality;
+    noteDisplay.textContent = currentNote;
+    extraDisplay.textContent = TRIAD_INVERSIONS[inv] + " · Str " + TRIAD_STRING_SETS[set].label;
+    statusDisplay.textContent = "";
+    return;
+  }
+}
+function pickNewRhythm() {
+  const pn = getPracticeNotes();
+  const root = pn[Math.floor(Math.random() * pn.length)];
+  const [suffix, intervals] = RHYTHM_CHORDS[Math.floor(Math.random() * RHYTHM_CHORDS.length)];
+  const rhythm = generateRhythmBar(meter, rhythmDifficulty);
+  const rootMidi = 45 + ((pcOf(root) - 9 + 12) % 12);
+  const chordNotes = mapMidisToPositions(intervals.map(s => rootMidi + s), TUNINGS[currentTuning]);
+  rhythmState = { rhythm, chordRoot: root, chordSuffix: suffix, chordNotes };
+  currentNote = root + suffix;
+  noteDisplay.textContent = currentNote;
+  extraDisplay.textContent = "strum the rhythm";
+  statusDisplay.textContent = "";
+  drawRhythmBar(rhythm, null);
+}
+
+// ── Prompt Lock ────────────────────────────────────────────────────
+// When locked, the current prompt repeats indefinitely instead of advancing.
+// Unlocked automatically when a different practice mode is selected.
+let promptLocked = false;
+function setPromptLocked(v) {
+  promptLocked = v;
+  lockBtn.classList.toggle('active', v);
+  lockBtn.innerHTML = (v ? '&#128274;' : '&#128275;') + ' Repeat the Current';
+  updateBeatCountdown();
+}
+lockBtn.addEventListener('click', () => setPromptLocked(!promptLocked));
+
+// ── Beat-driven progression ────────────────────────────────────────
+function updateBeatCountdown() { const cd = $('beatCountdown'); if (!practiceMode || !prerollDone) { cd.textContent = ''; return; } cd.textContent = promptLocked ? '\u{1F512} Locked' : 'UntilNext: ' + (beatRepeatValue - kickCounter); }
 function onKickHit() {
   if (!practiceMode) return; kickCounter++;
   if (!prerollDone) { const rem = prerollValue - kickCounter; if (rem <= 0) { prerollDone = true; kickCounter = 0; pickNewContent(); } else statusDisplay.textContent = `Pre-roll: ${rem}`; updateBeatCountdown(); return; }
-  if (practiceMode === "note") { if (kickCounter >= beatRepeatValue) { kickCounter = 0; pickNewContent(); } }
-  else if (practiceMode === "caged") {
+  if (practiceMode === "caged") {
     const half = Math.max(1, Math.floor((beatRepeatValue + 1) / 2));
-    if (kickCounter === half) { currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; extraDisplay.textContent = currentExtra; drawPracticeStaff(); }
-    if (kickCounter >= beatRepeatValue) { kickCounter = 0; currentNote = randNote(currentNote); currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; drawPracticeStaff(); }
-  } else if (practiceMode === "chord") { if (kickCounter >= beatRepeatValue) { kickCounter = 0; pickNewContent(); } }
-  else if (practiceMode === "scale") { if (kickCounter >= beatRepeatValue) { kickCounter = 0; pickNewContent(); } }
+    if (kickCounter === half && !promptLocked) { currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; extraDisplay.textContent = currentExtra; drawPracticeStaff(); updateFretboardForContent(); }
+    if (kickCounter >= beatRepeatValue) { kickCounter = 0; if (!promptLocked) { currentNote = randNote(currentNote); currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; drawPracticeStaff(); updateFretboardForContent(); } }
+  } else {
+    if (kickCounter >= beatRepeatValue) { kickCounter = 0; if (!promptLocked) pickNewContent(); }
+  }
   updateBeatCountdown();
 }
 function stopPractice() {
   practiceMode = null; kickCounter = 0; prerollDone = false; currentNote = ""; currentExtra = "";
+  triadState = null; rhythmState = null;
+  cancelArp();
   noteDisplay.textContent = ""; extraDisplay.textContent = ""; statusDisplay.textContent = ""; $('beatCountdown').textContent = "";
-  noteModeBtn.classList.remove('active'); cagedModeBtn.classList.remove('active'); chordModeBtn.classList.remove('active'); scaleModeBtn.classList.remove('active');
+  for (const btn of Object.values(MODE_BTNS)) btn.classList.remove('active');
+  displayFrame.classList.remove('rhythm-on');
+  drawRhythmBar(null);
   drawStaffCanvas("");
+  setFretMarkers([]);
 }
 async function onMode(mode) {
   engine.initContext(); // synchronous unlock within user gesture
   await ensureAudio();
   if (practiceMode === mode) { stopPractice(); stopPlayback(); currentStep = 0; playing = false; paused = false; startBtn.innerHTML = '&#9654;'; clearHighlight(); return; }
+  setPromptLocked(false); // switching to another mode releases the lock
   stopPlayback(); clearHighlight();
+  stopPractice();
   practiceMode = mode; kickCounter = 0; prerollDone = (prerollValue === 0); currentNote = ""; currentExtra = "";
-  noteModeBtn.classList.toggle('active', mode === "note"); cagedModeBtn.classList.toggle('active', mode === "caged"); chordModeBtn.classList.toggle('active', mode === "chord"); scaleModeBtn.classList.toggle('active', mode === "scale");
+  for (const [m, btn] of Object.entries(MODE_BTNS)) btn.classList.toggle('active', m === mode);
+  displayFrame.classList.toggle('rhythm-on', mode === 'rhythm');
   if (!prerollDone) { noteDisplay.textContent = ""; extraDisplay.textContent = ""; statusDisplay.textContent = `Pre-roll: ${prerollValue}`; } else pickNewContent();
   currentStep = 0; playing = true; paused = false; startBtn.innerHTML = '&#9208;';
   engine.seqNumSteps = METER_CONFIG[meter].steps; syncEngineOwner(); engine.startSequencer(0);
 }
-noteModeBtn.addEventListener('click', () => onMode("note"));
-cagedModeBtn.addEventListener('click', () => onMode("caged"));
-chordModeBtn.addEventListener('click', () => onMode("chord"));
-scaleModeBtn.addEventListener('click', () => onMode("scale"));
+for (const [mode, btn] of Object.entries(MODE_BTNS)) btn.addEventListener('click', () => onMode(mode));
+
+// ── Arpeggio trigger (Space / swipe up / button) ───────────────────
+// Map target midis onto fretboard positions: greedy nearest-to-anchor search
+function mapMidisToPositions(midis, tuning) {
+  const out = [];
+  let anchor = null, prevS = -1;
+  for (let m of midis) {
+    while (m < tuning[0]) m += 12;
+    while (m > tuning[5] + NUM_FRETS) m -= 12;
+    let best = null, bestScore = Infinity;
+    for (let s = 0; s < 6; s++) {
+      const f = m - tuning[s];
+      if (f < 0 || f > NUM_FRETS) continue;
+      let score = Math.abs(f - (anchor == null ? 5 : anchor)) + (s < prevS ? 6 : 0);
+      if (score < bestScore) { best = { s, f, midi: m }; bestScore = score; }
+    }
+    if (best) { if (anchor == null) anchor = best.f; prevS = best.s; out.push(best); }
+  }
+  return out;
+}
+function rootMidiForPc(pc) { return 45 + ((pc - 9 + 12) % 12); } // A2..Ab3
+
+function getArpNotes() {
+  const tuning = TUNINGS[currentTuning];
+  if (practiceMode === 'note' && currentNote) {
+    const m0 = rootMidiForPc(pcOf(currentNote));
+    return mapMidisToPositions([m0, m0 + 12], tuning);
+  }
+  if (practiceMode === 'caged' && currentNote) {
+    const rootPc = pcOf(currentNote);
+    const shape = currentTuning === 'Standard' ? computeCagedShape(rootPc, currentExtra, tuning) : null;
+    if (shape) return shape.slice().sort((a, b) => a.midi - b.midi);
+    const m0 = rootMidiForPc(rootPc);
+    return mapMidisToPositions([m0, m0 + 4, m0 + 7, m0 + 12], tuning);
+  }
+  if (practiceMode === 'chord' && currentNote) {
+    const m = currentNote.match(/^([A-G][#b]?)(.+)$/);
+    if (!m) return [];
+    const m0 = rootMidiForPc(pcOf(m[1]));
+    return mapMidisToPositions([m0, ...(CHORD_NOTE_INTERVALS[m[2]] || []).map(iv => m0 + iv.s)], tuning);
+  }
+  if (practiceMode === 'scale' && currentNote) {
+    const m = currentNote.match(/^([A-G][#b]?)\s(.+)$/);
+    if (!m) return [];
+    const m0 = rootMidiForPc(pcOf(m[1]));
+    const ivs = (SCALE_INTERVALS[m[2]] || []).map(iv => m0 + iv.s);
+    return mapMidisToPositions([...ivs, m0 + 12], tuning);
+  }
+  if (practiceMode === 'triad' && triadState && triadState.shape) {
+    return triadState.shape.slice().sort((a, b) => a.midi - b.midi);
+  }
+  return [];
+}
+
+function triggerArp() {
+  engine.initContext();
+  if (!practiceMode || !prerollDone) return;
+  const go = () => {
+    if (practiceMode === 'rhythm') {
+      if (rhythmState) playRhythmArp(rhythmState.rhythm, rhythmState.chordNotes);
+    } else {
+      playArpeggio(getArpNotes());
+    }
+  };
+  // First trigger may arrive while the context is still suspended (iOS):
+  // resume within this gesture, then play.
+  if (engine.ctx && engine.ctx.state === 'suspended') engine.ctx.resume().then(go).catch(console.error);
+  else go();
+}
+arpBtn.addEventListener('click', triggerArp);
+
+// Space bar (desktop + mobile keyboards)
+window.addEventListener('keydown', e => {
+  if (e.code !== 'Space' && e.key !== ' ') return;
+  const tag = (e.target.tagName || '').toUpperCase();
+  if (/INPUT|SELECT|TEXTAREA/.test(tag)) return;
+  e.preventDefault();
+  if (e.repeat) return;
+  triggerArp();
+});
+
+// Swipe up (mobile) — ignore flicks that scrolled the page or an inner scroller
+let _swipeX0 = null, _swipeY0 = null, _swipeT0 = 0, _swipeScrollY0 = 0, _swipeScrolled = false;
+// scroll events don't bubble, but a capture-phase listener on document sees
+// scrolls of the page AND of inner scrollers (e.g. .grid-container).
+document.addEventListener('scroll', () => { _swipeScrolled = true; }, { capture: true, passive: true });
+document.addEventListener('touchstart', e => {
+  if (e.touches.length > 1) { _swipeX0 = _swipeY0 = null; return; } // multi-touch: abort tracking
+  const t = e.touches[0];
+  _swipeX0 = t.clientX; _swipeY0 = t.clientY; _swipeT0 = performance.now();
+  _swipeScrollY0 = (document.scrollingElement || document.documentElement).scrollTop;
+  _swipeScrolled = false;
+}, { passive: true });
+document.addEventListener('touchcancel', () => { _swipeX0 = _swipeY0 = null; }, { passive: true });
+document.addEventListener('touchend', e => {
+  if (_swipeY0 == null) return;
+  if (e.touches.length > 0) { _swipeX0 = _swipeY0 = null; return; } // other fingers still down
+  const t = e.changedTouches[0];
+  const dx = t.clientX - _swipeX0, dy = t.clientY - _swipeY0, dt = performance.now() - _swipeT0;
+  _swipeX0 = _swipeY0 = null;
+  if (dt > 600 || dy > -60 || Math.abs(dx) > Math.abs(dy) * 0.6) return;
+  const scNow = (document.scrollingElement || document.documentElement).scrollTop;
+  if (_swipeScrolled || Math.abs(scNow - _swipeScrollY0) > 5) return; // it was a scroll flick
+  const tag = (e.target.tagName || '').toUpperCase();
+  if (/INPUT|SELECT|TEXTAREA|BUTTON/.test(tag)) return;
+  if (e.target.closest && e.target.closest('.grid-container, .preset-list')) return;
+  triggerArp();
+}, { passive: true });
 
 // ── Controls ───────────────────────────────────────────────────────
 bpmSpin.addEventListener('input', () => { bpm = parseFloat(bpmSpin.value) || 70; bpmSlider.value = Math.round(bpm * 10); });
@@ -945,7 +1983,32 @@ meterCombo.addEventListener('change', () => {
 swingSlider.addEventListener('input', () => { swing = parseInt(swingSlider.value); swingVal.textContent = swing + '%'; });
 prerollSlider.addEventListener('input', () => { prerollValue = parseInt(prerollSlider.value) + 1; prerollValEl.textContent = prerollSlider.value; });
 beatRepeatSlider.addEventListener('input', () => { beatRepeatValue = parseInt(beatRepeatSlider.value); beatRepeatValEl.textContent = beatRepeatValue; });
-$('flatsCheck').addEventListener('change', e => { useFlats = e.target.checked; });
+$('flatsCheck').addEventListener('change', e => {
+  useFlats = e.target.checked;
+  drawPracticeStaff(); updateFretboardForContent();
+});
+arpVolSlider.addEventListener('input', () => {
+  arpVolume = parseFloat(arpVolSlider.value);
+  arpVolVal.textContent = arpVolume.toFixed(2);
+});
+rhythmDiffCombo.addEventListener('change', () => { rhythmDifficulty = rhythmDiffCombo.value; });
+tuningCombo.addEventListener('change', () => {
+  currentTuning = tuningCombo.value;
+  updateTuningNotes();
+  _fretBase = null;
+  if (practiceMode === 'triad' && triadState) {
+    // Re-fit the same triad to the new tuning; pick a fresh one if impossible
+    const shape = computeTriadShape(pcOf(triadState.root), triadState.quality, triadState.inv, triadState.set, TUNINGS[currentTuning]);
+    if (shape) triadState.shape = shape; else pickNewTriad();
+  }
+  if (practiceMode === 'rhythm' && rhythmState) {
+    const rootMidi = rootMidiForPc(pcOf(rhythmState.chordRoot));
+    const intervals = (RHYTHM_CHORDS.find(rc => rc[0] === rhythmState.chordSuffix) || RHYTHM_CHORDS[0])[1];
+    rhythmState.chordNotes = mapMidisToPositions(intervals.map(s => rootMidi + s), TUNINGS[currentTuning]);
+  }
+  updateFretboardForContent();
+  drawFretboard();
+});
 
 // ── Presets ────────────────────────────────────────────────────────
 function refreshPresetList() {
@@ -993,12 +2056,13 @@ function buildScaleToggles() {
 }
 
 // ── Drum Volume Sliders ────────────────────────────────────────────
-[
+const DRUM_VOL_IDS = [
   { id: 'volKick',  valId: 'volKickVal',  name: 'Kick'  },
   { id: 'volSnare', valId: 'volSnareVal', name: 'Snare' },
   { id: 'volCHat',  valId: 'volCHatVal',  name: 'C-Hat' },
   { id: 'volOHat',  valId: 'volOHatVal',  name: 'O-Hat' },
-].forEach(({ id, valId, name }) => {
+];
+DRUM_VOL_IDS.forEach(({ id, valId, name }) => {
   const slider = $(id), label = $(valId);
   slider.addEventListener('input', () => {
     trackVolumes[name] = parseInt(slider.value) / 25;
@@ -1006,8 +2070,147 @@ function buildScaleToggles() {
   });
 });
 
+// ── Cloud Sync (Supabase Storage, dedicated CSV) ───────────────────
+const SUPABASE_URL = 'https://upqnxyllnenivehmallp.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_o7KDz58nXdjLN7TwOw2Xhg_VBWzOccH';
+const BUCKET       = 'csv-data';
+const DATA_FILE    = 'guitar_practice_settings.csv';
+const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+const cloudSaveBtn = $('cloudSaveBtn'), cloudLoadBtn = $('cloudLoadBtn'), cloudStatus = $('cloudStatus');
+
+function setCloudStatus(msg, cls) {
+  cloudStatus.textContent = msg;
+  cloudStatus.className = 'cloud-status' + (cls ? ' ' + cls : '');
+}
+function setCloudBusy(busy) { cloudSaveBtn.disabled = busy; cloudLoadBtn.disabled = busy; }
+
+function buildSettingsPayload() {
+  const pats = {};
+  for (const t of TRACK_INFO) pats[t.name] = patterns[t.name].map(v => v ? '1' : '0').join('');
+  return {
+    version: 1,
+    bpm, doubleTime, meter, swing, useFlats,
+    preroll: parseInt(prerollSlider.value),
+    beatRepeat: beatRepeatValue,
+    sineVol: parseFloat(sineSlider.value),
+    arpVol: arpVolume,
+    tuning: currentTuning,
+    rhythmDiff: rhythmDifficulty,
+    drumVols: Object.fromEntries(DRUM_VOL_IDS.map(d => [d.name, parseInt($(d.id).value)])),
+    scaleEnabled,
+    patterns: pats,
+    presets,
+  };
+}
+function applySettingsPayload(p) {
+  if (!p || typeof p !== 'object') return;
+  if (playing) { stopPlayback(); currentStep = 0; playing = false; paused = false; startBtn.innerHTML = '&#9654;'; clearHighlight(); }
+  stopPractice();
+  if (typeof p.bpm === 'number') { bpm = p.bpm; bpmSpin.value = bpm.toFixed(1); bpmSlider.value = Math.round(bpm * 10); }
+  if (typeof p.doubleTime === 'boolean') { doubleTime = p.doubleTime; dtCheck.checked = doubleTime; }
+  if (METER_CONFIG[p.meter]) { meter = p.meter; meterCombo.value = meter; engine.seqNumSteps = METER_CONFIG[meter].steps; }
+  if (typeof p.swing === 'number') { swing = p.swing; swingSlider.value = swing; swingVal.textContent = swing + '%'; }
+  if (typeof p.useFlats === 'boolean') { useFlats = p.useFlats; $('flatsCheck').checked = useFlats; }
+  if (typeof p.preroll === 'number') { prerollSlider.value = p.preroll; prerollValEl.textContent = p.preroll; prerollValue = p.preroll + 1; }
+  if (typeof p.beatRepeat === 'number') { beatRepeatValue = p.beatRepeat; beatRepeatSlider.value = beatRepeatValue; beatRepeatValEl.textContent = beatRepeatValue; }
+  if (typeof p.sineVol === 'number') { sineSlider.value = p.sineVol; sineVal.textContent = p.sineVol.toFixed(2); }
+  if (typeof p.arpVol === 'number') { arpVolume = p.arpVol; arpVolSlider.value = p.arpVol; arpVolVal.textContent = p.arpVol.toFixed(2); }
+  if (TUNINGS[p.tuning]) { currentTuning = p.tuning; tuningCombo.value = currentTuning; updateTuningNotes(); _fretBase = null; }
+  if (RHYTHM_DIFF_IDX[p.rhythmDiff] != null) { rhythmDifficulty = p.rhythmDiff; rhythmDiffCombo.value = rhythmDifficulty; }
+  if (p.drumVols) {
+    for (const d of DRUM_VOL_IDS) {
+      const v = p.drumVols[d.name];
+      if (typeof v === 'number') { $(d.id).value = v; $(d.valId).textContent = v; trackVolumes[d.name] = v / 25; }
+    }
+  }
+  if (p.scaleEnabled && typeof p.scaleEnabled === 'object') {
+    SCALE_NAMES.forEach(n => { if (typeof p.scaleEnabled[n] === 'boolean') scaleEnabled[n] = p.scaleEnabled[n]; });
+    buildScaleToggles();
+  }
+  if (p.patterns) {
+    for (const t of TRACK_INFO) if (typeof p.patterns[t.name] === 'string') patterns[t.name] = strToPattern(p.patterns[t.name]);
+  }
+  if (Array.isArray(p.presets)) { presets = p.presets; refreshPresetList(); }
+  currentStep = 0; prevHighlight = -1;
+  buildGrid();
+  drawFretboard();
+}
+
+function settingsToCSV(payload) {
+  const json = JSON.stringify(payload);
+  return 'key,value\nconfig,"' + json.replace(/"/g, '""') + '"\n';
+}
+function csvToSettings(text) {
+  // Single-line match only: JSON.stringify never emits raw newlines, and
+  // keeping the capture on one line prevents a stray later row from being
+  // swallowed by a greedy multiline match.
+  const m = text.match(/^config,"([^\n]*)"\s*$/m);
+  if (!m) return null;
+  return JSON.parse(m[1].replace(/""/g, '"'));
+}
+
+async function cloudSave() {
+  if (!sb) { setCloudStatus('Supabase SDK not loaded (offline?)', 'err'); return; }
+  setCloudBusy(true); setCloudStatus('Saving…', 'busy');
+  try {
+    const blob = new Blob([settingsToCSV(buildSettingsPayload())], { type: 'text/csv' });
+    const { error } = await sb.storage.from(BUCKET).upload(DATA_FILE, blob, { upsert: true, contentType: 'text/csv' });
+    if (error) throw error;
+    setCloudStatus('Saved to cloud ✓ (' + new Date().toLocaleTimeString() + ')', 'ok');
+  } catch (e) {
+    console.error('Cloud save failed:', e);
+    setCloudStatus('Save failed: ' + (e.message || e), 'err');
+  } finally { setCloudBusy(false); }
+}
+// First-interaction flag: the silent startup load must never clobber a
+// session the user has already started (mode running, sliders moved, ...).
+let userTouched = false;
+['pointerdown', 'keydown'].forEach(ev =>
+  window.addEventListener(ev, () => { userTouched = true; }, { capture: true, once: true }));
+
+async function cloudLoad(silent) {
+  if (!sb) { if (!silent) setCloudStatus('Supabase SDK not loaded (offline?)', 'err'); return; }
+  // Silent startup fetch must not lock the Save/Reload buttons
+  if (!silent) { setCloudBusy(true); setCloudStatus('Loading…', 'busy'); }
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 10000); // hung request can't stall the UI
+  try {
+    const { data: { publicUrl } } = sb.storage.from(BUCKET).getPublicUrl(DATA_FILE);
+    const r = await fetch(publicUrl + '?t=' + Date.now(), {
+      cache: 'no-store', headers: { 'Cache-Control': 'no-cache, no-store' }, signal: ctrl.signal
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const payload = csvToSettings(await r.text());
+    if (!payload) throw new Error('bad file format');
+    if (silent && (userTouched || playing || practiceMode)) {
+      // User already started interacting — don't stop playback or clobber their changes.
+      setCloudStatus('Cloud settings found — press Reload to apply', '');
+      return;
+    }
+    try { applySettingsPayload(payload); }
+    catch (e2) {
+      console.error('Apply failed:', e2);
+      setCloudStatus('Cloud settings could not be fully applied', 'err');
+      return;
+    }
+    setCloudStatus('Settings loaded from cloud ✓', 'ok');
+  } catch (e) {
+    console.warn('Cloud load:', e);
+    if (silent) setCloudStatus('No cloud settings yet — using defaults', '');
+    else setCloudStatus('Load failed: ' + (e.message || e), 'err');
+  } finally { clearTimeout(timer); if (!silent) setCloudBusy(false); }
+}
+cloudSaveBtn.addEventListener('click', cloudSave);
+cloudLoadBtn.addEventListener('click', () => cloudLoad(false));
+
 // ── Init ───────────────────────────────────────────────────────────
 applyDefaultPatterns(); buildGrid(); refreshPresetList(); initStaffCanvas(); buildScaleToggles();
+updateTuningNotes(); sizeFretCanvas();
+window.addEventListener('resize', () => {
+  sizeFretCanvas();
+  if (practiceMode === 'rhythm' && rhythmState && prerollDone) drawRhythmBar(rhythmState.rhythm, null);
+});
+cloudLoad(true);
 </script>
 </body>
 </html>
