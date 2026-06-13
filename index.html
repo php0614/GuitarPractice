@@ -244,7 +244,8 @@ select {
         <select id="rhythmDiffCombo">
           <option>Easy</option><option selected>Medium</option><option>Hard</option>
         </select>
-        <button id="lockBtn" class="lock-btn" title="Lock current prompt (keep repeating it)">&#128275; Repeat the Current</button>
+        <button id="lockBtn" class="lock-btn" title="Lock current prompt (keep repeating it) — R">&#128275; Repeat the Current</button>
+        <button id="arpLockBtn" class="lock-btn" title="Lock the arpeggio position (keep repeating the same one) — A">&#128275; Arp</button>
         <span id="beatCountdown" style="margin-left:12px;font-weight:bold;color:#f90;font-size:1.1em;"></span>
       </div>
     </div>
@@ -1493,6 +1494,7 @@ const arpVolSlider = $('arpVolSlider'), arpVolVal = $('arpVolVal');
 const tuningCombo = $('tuningCombo'), tuningNotesEl = $('tuningNotes');
 const rhythmDiffCombo = $('rhythmDiffCombo');
 const lockBtn = $('lockBtn');
+const arpLockBtn = $('arpLockBtn');
 const displayFrame = $('displayFrame');
 const MODE_BTNS = {
   note: $('noteModeBtn'), caged: $('cagedModeBtn'), chord: $('chordModeBtn'),
@@ -1749,7 +1751,7 @@ function pickNewRhythm() {
 // ── Prompt Lock ────────────────────────────────────────────────────
 // When locked, the current prompt repeats indefinitely instead of advancing.
 // Unlocked automatically when a different practice mode is selected.
-let promptLocked = false;
+let promptLocked = false, arpLocked = false;
 function setPromptLocked(v) {
   promptLocked = v;
   lockBtn.classList.toggle('active', v);
@@ -1757,6 +1759,16 @@ function setPromptLocked(v) {
   updateBeatCountdown();
 }
 lockBtn.addEventListener('click', () => setPromptLocked(!promptLocked));
+
+// ── Arp Lock ───────────────────────────────────────────────────────
+// When engaged, the arpeggio always replays the same fixed voicing.
+function setArpLocked(v) {
+  arpLocked = v;
+  arpLockBtn.classList.toggle('active', v);
+  arpLockBtn.innerHTML = (v ? '&#128274;' : '&#128275;') + ' Arp';
+  if (!v) _arpVarKey = '';   // drop cached voicings so a fresh set is built next trigger
+}
+arpLockBtn.addEventListener('click', () => setArpLocked(!arpLocked));
 
 // ── Beat-driven progression ────────────────────────────────────────
 function updateBeatCountdown() { const cd = $('beatCountdown'); if (!practiceMode || !prerollDone) { cd.textContent = ''; return; } cd.textContent = promptLocked ? '\u{1F512} Locked' : 'UntilNext: ' + (beatRepeatValue - kickCounter); }
@@ -1801,7 +1813,7 @@ for (const [mode, btn] of Object.entries(MODE_BTNS)) btn.addEventListener('click
 
 // ── Arpeggio trigger (Space / swipe up / button) ───────────────────
 // Map target midis onto fretboard positions: greedy nearest-to-anchor search
-function mapMidisToPositions(midis, tuning) {
+function mapMidisToPositions(midis, tuning, startFret = 5) {
   const out = [];
   let anchor = null, prevS = -1;
   for (let m of midis) {
@@ -1811,7 +1823,7 @@ function mapMidisToPositions(midis, tuning) {
     for (let s = 0; s < 6; s++) {
       const f = m - tuning[s];
       if (f < 0 || f > NUM_FRETS) continue;
-      let score = Math.abs(f - (anchor == null ? 5 : anchor)) + (s < prevS ? 6 : 0);
+      let score = Math.abs(f - (anchor == null ? startFret : anchor)) + (s < prevS ? 6 : 0);
       if (score < bestScore) { best = { s, f, midi: m }; bestScore = score; }
     }
     if (best) { if (anchor == null) anchor = best.f; prevS = best.s; out.push(best); }
@@ -1820,36 +1832,95 @@ function mapMidisToPositions(midis, tuning) {
 }
 function rootMidiForPc(pc) { return 45 + ((pc - 9 + 12) % 12); } // A2..Ab3
 
-function getArpNotes() {
+// Build the raw pitch material (midi notes) for the current prompt, plus an
+// optional fixed fretboard "shape" (CAGED / triad) used as the canonical voicing.
+function getArpSpec() {
   const tuning = TUNINGS[currentTuning];
   if (practiceMode === 'note' && currentNote) {
     const m0 = rootMidiForPc(pcOf(currentNote));
-    return mapMidisToPositions([m0, m0 + 12], tuning);
+    return { midis: [m0, m0 + 12] };
   }
   if (practiceMode === 'caged' && currentNote) {
     const rootPc = pcOf(currentNote);
     const shape = currentTuning === 'Standard' ? computeCagedShape(rootPc, currentExtra, tuning) : null;
-    if (shape) return shape.slice().sort((a, b) => a.midi - b.midi);
     const m0 = rootMidiForPc(rootPc);
-    return mapMidisToPositions([m0, m0 + 4, m0 + 7, m0 + 12], tuning);
+    return { midis: [m0, m0 + 4, m0 + 7, m0 + 12], canonical: shape ? shape.slice().sort((a, b) => a.midi - b.midi) : null };
   }
   if (practiceMode === 'chord' && currentNote) {
     const m = currentNote.match(/^([A-G][#b]?)(.+)$/);
-    if (!m) return [];
+    if (!m) return { midis: [] };
     const m0 = rootMidiForPc(pcOf(m[1]));
-    return mapMidisToPositions([m0, ...(CHORD_NOTE_INTERVALS[m[2]] || []).map(iv => m0 + iv.s)], tuning);
+    return { midis: [m0, ...(CHORD_NOTE_INTERVALS[m[2]] || []).map(iv => m0 + iv.s)] };
   }
   if (practiceMode === 'scale' && currentNote) {
     const m = currentNote.match(/^([A-G][#b]?)\s(.+)$/);
-    if (!m) return [];
+    if (!m) return { midis: [] };
     const m0 = rootMidiForPc(pcOf(m[1]));
     const ivs = (SCALE_INTERVALS[m[2]] || []).map(iv => m0 + iv.s);
-    return mapMidisToPositions([...ivs, m0 + 12], tuning);
+    return { midis: [...ivs, m0 + 12] };
   }
   if (practiceMode === 'triad' && triadState && triadState.shape) {
-    return triadState.shape.slice().sort((a, b) => a.midi - b.midi);
+    const canonical = triadState.shape.slice().sort((a, b) => a.midi - b.midi);
+    return { midis: canonical.map(p => p.midi), canonical };
   }
-  return [];
+  return { midis: [] };
+}
+
+// The fixed arpeggio (original behaviour) — used when the Arp lock is engaged.
+function getArpNotes() {
+  const spec = getArpSpec();
+  if (spec.canonical) return spec.canonical;
+  return mapMidisToPositions(spec.midis, TUNINGS[currentTuning]);
+}
+
+// Generate several distinct fretboard voicings of the current prompt by
+// re-mapping the same pitches around different neck positions and octaves.
+function buildArpVariants() {
+  const tuning = TUNINGS[currentTuning];
+  const spec = getArpSpec();
+  const variants = [], seen = new Set();
+  const push = (arr) => {
+    if (!arr || arr.length < 2) return;
+    const key = arr.map(p => p.s + '.' + p.f).join('|');
+    if (seen.has(key)) return;
+    seen.add(key); variants.push(arr);
+  };
+  if (spec.canonical) push(spec.canonical);            // keep the signature shape first
+  if (spec.midis && spec.midis.length) {
+    for (const oct of [0, 12, -12]) {
+      for (const anchor of [5, 0, 9, 12, 3, 7]) {
+        push(mapMidisToPositions(spec.midis.map(m => m + oct), tuning, anchor));
+      }
+    }
+  }
+  return variants;
+}
+
+// ── Arp position rotation ──────────────────────────────────────────
+// Without the Arp lock, repeating the trigger plays the same voicing twice
+// and then rotates to a different one, so practice isn't stuck in one spot.
+let _arpVarList = [], _arpVarKey = '', _arpVarIdx = 0, _arpVarReps = 0;
+function arpContentKey() {
+  let k = practiceMode + '|' + currentNote + '|' + currentExtra + '|' + currentTuning;
+  if (practiceMode === 'triad' && triadState) k += '|' + triadState.root + triadState.quality + triadState.inv + triadState.set;
+  return k;
+}
+function pickArpVariant() {
+  const key = arpContentKey();
+  if (key !== _arpVarKey) {                  // prompt changed → fresh set of voicings
+    _arpVarKey = key; _arpVarList = buildArpVariants(); _arpVarIdx = 0; _arpVarReps = 0;
+  }
+  if (arpLocked || _arpVarList.length <= 1) {
+    _arpVarIdx = 0;
+    return _arpVarList.length ? _arpVarList[0] : getArpNotes();
+  }
+  _arpVarReps++;
+  if (_arpVarReps > 2) {                      // same voicing has played twice — switch
+    let n = _arpVarIdx;
+    do { n = Math.floor(Math.random() * _arpVarList.length); } while (n === _arpVarIdx);
+    _arpVarIdx = n; _arpVarReps = 1;
+  }
+  return _arpVarList[_arpVarIdx];
 }
 
 function triggerArp() {
@@ -1859,7 +1930,7 @@ function triggerArp() {
     if (practiceMode === 'rhythm') {
       if (rhythmState) playRhythmArp(rhythmState.rhythm, rhythmState.chordNotes);
     } else {
-      playArpeggio(getArpNotes());
+      playArpeggio(pickArpVariant());
     }
   };
   // First trigger may arrive while the context is still suspended (iOS):
@@ -1869,14 +1940,41 @@ function triggerArp() {
 }
 arpBtn.addEventListener('click', triggerArp);
 
-// Space bar (desktop + mobile keyboards)
+// Shift+Space = Play/Stop switch (full reset — always restarts from the start,
+// NOT pause/resume like the transport button).
+function togglePlayStop() {
+  if (playing && !paused) {
+    engine.initContext();
+    stopPlayback(); currentStep = 0; playing = false; paused = false;
+    startBtn.innerHTML = '&#9654;'; clearHighlight(); stopPractice();
+  } else {
+    ensureAudio().then(() => { currentStep = 0; paused = false; startPlayback(); startBtn.innerHTML = '&#9208;'; });
+  }
+}
+
+// ── Keyboard shortcuts ─────────────────────────────────────────────
+// Space = Arp · Shift+Space = Play/Stop · R = Repeat lock · A = Arp lock
+// N/C/H/S/T/Y = Note/CAGED/Chord/Scale/Triad/Rhythm modes
+const _MODE_KEYS = { n: 'note', c: 'caged', h: 'chord', s: 'scale', t: 'triad', y: 'rhythm' };
 window.addEventListener('keydown', e => {
-  if (e.code !== 'Space' && e.key !== ' ') return;
   const tag = (e.target.tagName || '').toUpperCase();
-  if (/INPUT|SELECT|TEXTAREA/.test(tag)) return;
-  e.preventDefault();
-  if (e.repeat) return;
-  triggerArp();
+  if (/INPUT|SELECT|TEXTAREA/.test(tag) || e.target.isContentEditable) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+  // Space → arpeggio · Shift+Space → Play/Stop (full reset, restart from start)
+  if (e.code === 'Space' || e.key === ' ') {
+    e.preventDefault();
+    if (e.repeat) return;
+    if (e.shiftKey) togglePlayStop();
+    else triggerArp();
+    return;
+  }
+  if (e.repeat || e.shiftKey) return;
+
+  const k = e.key.toLowerCase();
+  if (k === 'r') { e.preventDefault(); setPromptLocked(!promptLocked); return; }
+  if (k === 'a') { e.preventDefault(); setArpLocked(!arpLocked); return; }
+  if (_MODE_KEYS[k]) { e.preventDefault(); onMode(_MODE_KEYS[k]); return; }
 });
 
 // Swipe up (mobile) — ignore flicks that scrolled the page or an inner scroller
