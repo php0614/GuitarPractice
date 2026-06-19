@@ -15,6 +15,10 @@ python -m http.server 8000
 
 Or deploy the folder to any static host (GitHub Pages, Netlify).
 
+## Visual Layout Refresh
+
+The single-file HTML UI now mirrors the compact native iOS layout more closely: icon-labeled mode/transport buttons, icon-bearing collapsible headers, a tighter 430px app width, and a two-row practice-control strip with the Arp lock aligned on the second row. This refresh is visual only; the original HTML app functions and data flow are unchanged.
+
 ## Practice Modes
 
 Tap a mode button to start it (playback starts automatically after the pre-roll). Tap the same button again to stop.
@@ -40,9 +44,9 @@ The lock button (Practice Settings, next to the Rhythm difficulty menu) freezes 
 - **Tunings:** Standard, Drop D, Open G, Open D, DADGAD. Retuned strings are labeled in orange at the nut. All modes recompute their positions for the selected tuning (CAGED shapes are Standard-only and fall back to whole-neck triad tones in other tunings).
 - **Markers:** orange ring = root, gold = chord/scale tone, cyan diamond = the scale's character note. Every dot is labeled with its note name (respects the *Flats* toggle).
 
-## Arpeggio Preview (Space / Swipe up / Arp button)
+## Arpeggio Preview (Shift+Space / Swipe up / Arp button)
 
-While practicing, hit **Space** (desktop or mobile keyboard), **swipe up** (mobile), or tap **♪ Arp**:
+While practicing, hit **Shift+Space** (desktop keyboard), **swipe up** (mobile), or tap **♪ Arp**:
 
 - The current note/chord/scale/triad plays as an arpeggio on a small subtractive synth (two detuned saws → resonant lowpass with a plucky filter envelope). Volume: *Arp vol* in Practice Settings.
 - In **Rhythm** mode it instead plays the displayed rhythm as chord stabs — an audio demo of the notation, rendered double-time (and swing-aware) so it fits the same window.

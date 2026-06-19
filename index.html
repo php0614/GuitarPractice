@@ -6,15 +6,17 @@
 <title>[Music] Guitar Practice</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-body { background: #1A1A2E; color: #E0E0E0; font-family: -apple-system, 'Segoe UI', sans-serif; font-size: 13px; overflow-x: hidden; }
-.app { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; padding: 8px; gap: 6px; }
+body { background: #1A1A2E; color: #E0E0E0; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 13px; overflow-x: hidden; }
+.app { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; padding: 5px; gap: 4px; max-width: 430px; margin: 0 auto; }
 
 /* ── Collapsible Sections ─────────────────────────── */
 .section-header {
   display: flex; align-items: center; justify-content: space-between;
-  background: #252545; border-radius: 8px; padding: 8px 12px; cursor: pointer;
-  font-weight: bold; font-size: 13px; color: #CCC; user-select: none;
+  background: #252545; border-radius: 8px; padding: 6px 12px; cursor: pointer;
+  font-weight: bold; font-size: 13px; color: #E0E0E0; user-select: none;
 }
+.section-title { display: flex; align-items: center; gap: 7px; }
+.section-icon { color: #FFD700; width: 16px; display: inline-flex; justify-content: center; font-size: 12px; }
 .section-header .arrow { transition: transform 0.2s; font-size: 10px; }
 .section-header.collapsed .arrow { transform: rotate(-90deg); }
 .section-body { overflow: hidden; transition: max-height 0.3s ease; }
@@ -23,11 +25,11 @@ body { background: #1A1A2E; color: #E0E0E0; font-family: -apple-system, 'Segoe U
 /* ── Practice Display (always visible, top) ────────── */
 .display-frame {
   background: #12122A; border: 2px solid #333; border-radius: 12px;
-  min-height: 150px; display: flex; flex-direction: column; align-items: center;
-  justify-content: center; padding: 12px 16px; flex-shrink: 0;
+  min-height: 106px; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 5px 8px; flex-shrink: 0;
 }
-.note-display { color: #FFD700; font-size: 52px; font-weight: bold; line-height: 1.1; }
-.extra-display { color: #00CED1; font-size: 20px; font-weight: bold; margin-top: 2px; }
+.note-display { color: #FFD700; font-size: 42px; font-weight: bold; line-height: 1.1; }
+.extra-display { color: #00CED1; font-size: 16px; font-weight: bold; margin-top: 2px; }
 .status-display { color: #888; font-size: 14px; margin-top: 6px; }
 
 /* ── Staff / Rhythm Notation ─────────────────────── */
@@ -40,7 +42,7 @@ body { background: #1A1A2E; color: #E0E0E0; font-family: -apple-system, 'Segoe U
 /* ── Fretboard ───────────────────────────────────── */
 .fret-panel {
   background: #12122A; border: 2px solid #333; border-radius: 12px;
-  padding: 8px 8px 6px; flex-shrink: 0;
+  padding: 5px; flex-shrink: 0;
 }
 #fretCanvas { width: 100%; display: block; border-radius: 6px; }
 .fret-options { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
@@ -54,8 +56,10 @@ body { background: #1A1A2E; color: #E0E0E0; font-family: -apple-system, 'Segoe U
 .mode-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .mode-btn {
   background: #2A2A3E; color: #E0E0E0; border: 2px solid #555; border-radius: 8px;
-  font-size: 12px; font-weight: bold; height: 40px; cursor: pointer;
+  font-size: 11px; font-weight: bold; height: 30px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
 }
+.btn-icon { display: inline-flex; align-items: center; justify-content: center; width: 14px; color: currentColor; font-size: 12px; }
 .mode-btn:active { background: #3A3A5E; }
 .mode-btn.active { background: #3A2A1E; border-color: #FF6B35; color: #FFD700; }
 
@@ -78,13 +82,36 @@ select {
 }
 .checkbox-label { display: flex; align-items: center; gap: 4px; color: #CCC; font-size: 12px; cursor: pointer; }
 .checkbox-label input[type="checkbox"] { accent-color: #FF6B35; width: 18px; height: 18px; }
+.practice-controls { display: flex; flex-direction: column; gap: 5px; padding: 0 12px; }
+.practice-control-row { display: flex; align-items: center; gap: 5px; width: 100%; }
+.control-spacer { flex: 1 1 auto; min-width: 0; }
+.chip-control,
 .lock-btn {
-  height: 30px; background: #2A2A3E; border: 1px solid #555; color: #CCC;
-  border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer;
-  padding: 0 12px; line-height: 1; margin-left: 20px; white-space: nowrap;
+  height: 28px; background: #2A2A3E; border: 1px solid #555; color: #E0E0E0;
+  border-radius: 7px; font-size: 10px; font-weight: bold; cursor: pointer;
+  padding: 0 7px; line-height: 1; white-space: nowrap;
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+}
+.chip-control { width: 82px; }
+.chip-control input[type="checkbox"] { position: absolute; opacity: 0; pointer-events: none; }
+.rhythm-chip { width: 82px; }
+.rhythm-chip select,
+.root-chip select {
+  border: 0; background: transparent; color: inherit; padding: 0; height: 24px;
+  font-size: 10px; font-weight: bold; max-width: 48px;
+}
+.root-chip { width: 82px; }
+.lock-btn {
+  margin-left: 0;
 }
 .lock-btn:active { background: #3A3A5E; }
 .lock-btn.active { background: #3A2A1E; border-color: #FF6B35; color: #FFD700; }
+#lockBtn { width: 60px; }
+#arpLockBtn { width: 45px; }
+#rootLockBtn { width: 50px; }
+.arp-slot { width: 45px; height: 28px; flex: 0 0 45px; }
+.root-slot { width: 52.5px; height: 28px; flex: 0 0 52.5px; }
+#beatCountdown { font-weight: bold; color: #FF6B35; font-size: 11px; }
 
 /* ── Step Grid ───────────────────────────────────── */
 .grid-container { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
@@ -109,7 +136,8 @@ select {
 .transport { display: flex; gap: 8px; }
 .transport-btn {
   flex: 1; background: #2A2A3E; color: #E0E0E0; border: 1px solid #555; border-radius: 8px;
-  font-size: 16px; font-weight: bold; height: 40px; cursor: pointer;
+  font-size: 12px; font-weight: bold; height: 31px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
 }
 .transport-btn:active { background: #3A3A5E; }
 #arpBtn { color: #FFD700; }
@@ -144,7 +172,7 @@ select {
 .preset-actions { display: flex; gap: 4px; }
 
 .spacer { flex: 1; }
-.inner-section { display: flex; flex-direction: column; gap: 6px; padding: 8px 0; }
+.inner-section { display: flex; flex-direction: column; gap: 6px; padding: 5px 0; }
 
 /* ── Scale Toggles ───────────────────────────────── */
 .scale-toggles-grid { display: flex; flex-wrap: wrap; gap: 4px 8px; }
@@ -205,21 +233,21 @@ select {
 
   <!-- Mode + Transport row -->
   <div class="mode-row">
-    <button class="mode-btn" id="noteModeBtn">Note</button>
-    <button class="mode-btn" id="cagedModeBtn">CAGED</button>
-    <button class="mode-btn" id="chordModeBtn">Chord</button>
-    <button class="mode-btn" id="scaleModeBtn">Scale</button>
-    <button class="mode-btn" id="triadModeBtn">Triad</button>
-    <button class="mode-btn" id="rhythmModeBtn">Rhythm</button>
+    <button class="mode-btn" id="noteModeBtn"><span class="btn-icon">♪</span><span>Note</span></button>
+    <button class="mode-btn" id="cagedModeBtn"><span class="btn-icon">▦</span><span>CAGED</span></button>
+    <button class="mode-btn" id="chordModeBtn"><span class="btn-icon">♬</span><span>Chord</span></button>
+    <button class="mode-btn" id="scaleModeBtn"><span class="btn-icon">↗</span><span>Scale</span></button>
+    <button class="mode-btn" id="triadModeBtn"><span class="btn-icon">△</span><span>Triad</span></button>
+    <button class="mode-btn" id="rhythmModeBtn"><span class="btn-icon">♬</span><span>Rhythm</span></button>
   </div>
   <div class="transport">
-    <button class="transport-btn" id="startBtn">&#9654;</button>
-    <button class="transport-btn" id="stopBtn">&#9632;</button>
-    <button class="transport-btn" id="arpBtn" title="Space / swipe up">&#9834; Arp</button>
+    <button class="transport-btn" id="startBtn" title="Play / Pause — Space"><span class="btn-icon">&#9654;</span><span>Play</span></button>
+    <button class="transport-btn" id="stopBtn"><span class="btn-icon">&#9632;</span><span>Stop</span></button>
+    <button class="transport-btn" id="arpBtn" title="Shift+Space / swipe up"><span class="btn-icon">&#9834;</span><span>Arp</span></button>
   </div>
   <!-- Practice Settings (collapsible) -->
   <div class="section-header" data-section="practice">
-    Practice Settings <span class="arrow">&#9660;</span>
+    <span class="section-title"><span class="section-icon">☷</span><span>Practice Settings</span></span><span class="arrow">&#9660;</span>
   </div>
   <div class="section-body" id="practiceSection">
     <div class="inner-section">
@@ -238,24 +266,33 @@ select {
         <input type="range" id="arpVolSlider" min="0" max="1" step="0.01" value="0.5">
         <span class="val" id="arpVolVal">0.50</span>
       </div>
-      <div class="control-row">
-        <label class="checkbox-label"><input type="checkbox" id="flatsCheck"> Flats (Db/Gb)</label>
-        <label style="margin-left:8px;">Rhythm:</label>
-        <select id="rhythmDiffCombo">
-          <option>Easy</option><option selected>Medium</option><option>Hard</option>
-        </select>
-        <button id="lockBtn" class="lock-btn" title="Lock current prompt (keep repeating it) — R">&#128275; Repeat the Current</button>
-        <button id="arpLockBtn" class="lock-btn" title="Lock the arpeggio position (keep repeating the same one) — A">&#128275; Arp</button>
-        <button id="rootLockBtn" class="lock-btn" title="Force the selected root note in every mode">&#128275; Root</button>
-        <select id="rootSelect" title="Root note used while Root is locked" style="margin-left:6px;"></select>
-        <span id="beatCountdown" style="margin-left:12px;font-weight:bold;color:#f90;font-size:1.1em;"></span>
+      <div class="practice-controls">
+        <div class="practice-control-row">
+          <label class="chip-control" id="flatsChip"><input type="checkbox" id="flatsCheck"><span class="btn-icon">Aa</span><span id="flatsLabel">Sharps</span><span id="flatsValue">C#</span></label>
+          <label class="chip-control rhythm-chip"><span class="btn-icon">♬</span><span>Rh</span>
+            <select id="rhythmDiffCombo">
+              <option>Easy</option><option selected>Medium</option><option>Hard</option>
+            </select>
+          </label>
+          <span class="control-spacer"></span>
+          <button id="lockBtn" class="lock-btn" title="Lock current prompt (keep repeating it) — R">&#128275; Repeat</button>
+          <span class="arp-slot" aria-hidden="true"></span>
+          <button id="rootLockBtn" class="lock-btn" title="Force the selected root note in every mode">&#128275; Root</button>
+        </div>
+        <div class="practice-control-row">
+          <label class="chip-control root-chip"><span class="btn-icon">◎</span><span>Root</span><select id="rootSelect" title="Root note used while Root is locked"></select></label>
+          <span id="beatCountdown"></span>
+          <span class="control-spacer"></span>
+          <button id="arpLockBtn" class="lock-btn" title="Lock the arpeggio position (keep repeating the same one) — A">&#128275; Arp</button>
+          <span class="root-slot" aria-hidden="true"></span>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Sequencer (collapsible) -->
   <div class="section-header" data-section="sequencer">
-    Sequencer <span class="arrow">&#9660;</span>
+    <span class="section-title"><span class="section-icon">▦</span><span>Sequencer</span></span><span class="arrow">&#9660;</span>
   </div>
   <div class="section-body" id="sequencerSection">
     <div class="inner-section">
@@ -305,7 +342,7 @@ select {
 
   <!-- Presets (collapsible) -->
   <div class="section-header collapsed" data-section="presets">
-    Presets <span class="arrow">&#9660;</span>
+    <span class="section-title"><span class="section-icon">▤</span><span>Presets</span></span><span class="arrow">&#9660;</span>
   </div>
   <div class="section-body collapsed" id="presetsSection">
     <div class="inner-section">
@@ -323,7 +360,7 @@ select {
 
   <!-- Scale Toggles (collapsible) -->
   <div class="section-header collapsed" data-section="scaleToggles">
-    Scale Toggles <span class="arrow">&#9660;</span>
+    <span class="section-title"><span class="section-icon">☑</span><span>Scale Toggles</span></span><span class="arrow">&#9660;</span>
   </div>
   <div class="section-body collapsed" id="scaleTogglesSection">
     <div class="inner-section">
@@ -333,7 +370,7 @@ select {
 
   <!-- Cloud Sync (collapsible) -->
   <div class="section-header collapsed" data-section="cloud">
-    Cloud Sync <span class="arrow">&#9660;</span>
+    <span class="section-title"><span class="section-icon">☁</span><span>Cloud Sync</span></span><span class="arrow">&#9660;</span>
   </div>
   <div class="section-body collapsed" id="cloudSection">
     <div class="inner-section">
@@ -1504,6 +1541,17 @@ const MODE_BTNS = {
   scale: $('scaleModeBtn'), triad: $('triadModeBtn'), rhythm: $('rhythmModeBtn'),
 };
 
+function setStartButtonState(isPausedIcon) {
+  startBtn.innerHTML = isPausedIcon
+    ? '<span class="btn-icon">&#9208;</span><span>Pause</span>'
+    : '<span class="btn-icon">&#9654;</span><span>Play</span>';
+}
+
+function updateFlatsChip() {
+  $('flatsLabel').textContent = useFlats ? 'Flats' : 'Sharps';
+  $('flatsValue').textContent = useFlats ? 'Db' : 'C#';
+}
+
 // ── Helpers ────────────────────────────────────────────────────────
 function getPracticeNotes() { return useFlats ? _CHROM_F : CHROMATIC; }
 function getSixteenthDuration() {
@@ -1610,14 +1658,14 @@ const unlockAll = () => {
 
 startBtn.addEventListener('click', async () => {
   await ensureAudio();
-  if (playing && !paused) { paused = true; stopPlayback(); startBtn.innerHTML = '&#9654;'; }
-  else if (paused) { paused = false; syncEngineOwner(); startPlayback(); startBtn.innerHTML = '&#9208;'; }
-  else { currentStep = 0; startPlayback(); startBtn.innerHTML = '&#9208;'; }
+  if (playing && !paused) { paused = true; stopPlayback(); setStartButtonState(false); }
+  else if (paused) { paused = false; syncEngineOwner(); startPlayback(); setStartButtonState(true); }
+  else { currentStep = 0; startPlayback(); setStartButtonState(true); }
 });
 stopBtn.addEventListener('click', () => {
   engine.initContext();
   stopPlayback(); currentStep = 0; playing = false; paused = false;
-  startBtn.innerHTML = '&#9654;'; clearHighlight(); stopPractice();
+  setStartButtonState(false); clearHighlight(); stopPractice();
 });
 
 // ── Practice Modes ─────────────────────────────────────────────────
@@ -1791,7 +1839,7 @@ let promptLocked = false, arpLocked = false;
 function setPromptLocked(v) {
   promptLocked = v;
   lockBtn.classList.toggle('active', v);
-  lockBtn.innerHTML = (v ? '&#128274;' : '&#128275;') + ' Repeat the Current';
+  lockBtn.innerHTML = (v ? '&#128274;' : '&#128275;') + ' Repeat';
   updateBeatCountdown();
 }
 lockBtn.addEventListener('click', () => setPromptLocked(!promptLocked));
@@ -1834,7 +1882,7 @@ function stopPractice() {
 async function onMode(mode) {
   engine.initContext(); // synchronous unlock within user gesture
   await ensureAudio();
-  if (practiceMode === mode) { stopPractice(); stopPlayback(); currentStep = 0; playing = false; paused = false; startBtn.innerHTML = '&#9654;'; clearHighlight(); return; }
+  if (practiceMode === mode) { stopPractice(); stopPlayback(); currentStep = 0; playing = false; paused = false; setStartButtonState(false); clearHighlight(); return; }
   setPromptLocked(false); // switching to another mode releases the lock
   stopPlayback(); clearHighlight();
   stopPractice();
@@ -1842,12 +1890,12 @@ async function onMode(mode) {
   for (const [m, btn] of Object.entries(MODE_BTNS)) btn.classList.toggle('active', m === mode);
   displayFrame.classList.toggle('rhythm-on', mode === 'rhythm');
   if (!prerollDone) { noteDisplay.textContent = ""; extraDisplay.textContent = ""; statusDisplay.textContent = `Pre-roll: ${prerollValue}`; } else pickNewContent();
-  currentStep = 0; playing = true; paused = false; startBtn.innerHTML = '&#9208;';
+  currentStep = 0; playing = true; paused = false; setStartButtonState(true);
   engine.seqNumSteps = METER_CONFIG[meter].steps; syncEngineOwner(); engine.startSequencer(0);
 }
 for (const [mode, btn] of Object.entries(MODE_BTNS)) btn.addEventListener('click', () => onMode(mode));
 
-// ── Arpeggio trigger (Space / swipe up / button) ───────────────────
+// ── Arpeggio trigger (Shift+Space / swipe up / button) ─────────────
 // Map target midis onto fretboard positions: greedy nearest-to-anchor search
 function mapMidisToPositions(midis, tuning, startFret = 5) {
   const out = [];
@@ -1976,20 +2024,18 @@ function triggerArp() {
 }
 arpBtn.addEventListener('click', triggerArp);
 
-// Shift+Space = Play/Stop switch (full reset — always restarts from the start,
-// NOT pause/resume like the transport button).
-function togglePlayStop() {
-  if (playing && !paused) {
-    engine.initContext();
-    stopPlayback(); currentStep = 0; playing = false; paused = false;
-    startBtn.innerHTML = '&#9654;'; clearHighlight(); stopPractice();
-  } else {
-    ensureAudio().then(() => { currentStep = 0; paused = false; startPlayback(); startBtn.innerHTML = '&#9208;'; });
-  }
+// Space = Play/Pause the sequence (pause/resume — identical to the transport button,
+// NOT a full reset/stop).
+function togglePlayPause() {
+  ensureAudio().then(() => {
+    if (playing && !paused) { paused = true; stopPlayback(); setStartButtonState(false); }
+    else if (paused) { paused = false; syncEngineOwner(); startPlayback(); setStartButtonState(true); }
+    else { currentStep = 0; startPlayback(); setStartButtonState(true); }
+  });
 }
 
 // ── Keyboard shortcuts ─────────────────────────────────────────────
-// Space = Arp · Shift+Space = Play/Stop · R = Repeat lock · A = Arp lock
+// Space = Play/Pause · Shift+Space = Arp · R = Repeat lock · A = Arp lock
 // N/C/H/S/T/Y = Note/CAGED/Chord/Scale/Triad/Rhythm modes
 const _MODE_KEYS = { n: 'note', c: 'caged', h: 'chord', s: 'scale', t: 'triad', y: 'rhythm' };
 window.addEventListener('keydown', e => {
@@ -1997,12 +2043,12 @@ window.addEventListener('keydown', e => {
   if (/INPUT|SELECT|TEXTAREA/.test(tag) || e.target.isContentEditable) return;
   if (e.metaKey || e.ctrlKey || e.altKey) return;
 
-  // Space → arpeggio · Shift+Space → Play/Stop (full reset, restart from start)
+  // Space → Play/Pause (pause/resume) · Shift+Space → arpeggio
   if (e.code === 'Space' || e.key === ' ') {
     e.preventDefault();
     if (e.repeat) return;
-    if (e.shiftKey) togglePlayStop();
-    else triggerArp();
+    if (e.shiftKey) triggerArp();
+    else togglePlayPause();
     return;
   }
   if (e.repeat || e.shiftKey) return;
@@ -2046,7 +2092,7 @@ bpmSpin.addEventListener('input', () => { bpm = parseFloat(bpmSpin.value) || 70;
 bpmSlider.addEventListener('input', () => { bpm = parseInt(bpmSlider.value) / 10.0; bpmSpin.value = bpm.toFixed(1); });
 dtCheck.addEventListener('change', () => { doubleTime = dtCheck.checked; });
 meterCombo.addEventListener('change', () => {
-  if (playing) { stopPlayback(); playing = false; paused = false; startBtn.innerHTML = '&#9654;'; }
+  if (playing) { stopPlayback(); playing = false; paused = false; setStartButtonState(false); }
   stopPractice(); meter = meterCombo.value; engine.seqNumSteps = METER_CONFIG[meter].steps;
   currentStep = 0; prevHighlight = -1; applyDefaultPatterns(); buildGrid();
 });
@@ -2055,6 +2101,7 @@ prerollSlider.addEventListener('input', () => { prerollValue = parseInt(prerollS
 beatRepeatSlider.addEventListener('input', () => { beatRepeatValue = parseInt(beatRepeatSlider.value); beatRepeatValEl.textContent = beatRepeatValue; });
 $('flatsCheck').addEventListener('change', e => {
   useFlats = e.target.checked;
+  updateFlatsChip();
   buildRootSelect();
   drawPracticeStaff(); updateFretboardForContent();
 });
@@ -2093,7 +2140,7 @@ function refreshPresetList() {
 }
 function loadPreset(idx) {
   if (idx < 0 || idx >= presets.length) return; const p = presets[idx];
-  if (playing) { stopPlayback(); currentStep = 0; playing = false; paused = false; startBtn.innerHTML = '&#9654;'; clearHighlight(); stopPractice(); }
+  if (playing) { stopPlayback(); currentStep = 0; playing = false; paused = false; setStartButtonState(false); clearHighlight(); stopPractice(); }
   bpm = parseFloat(p.bpm); bpmSpin.value = bpm.toFixed(1); bpmSlider.value = Math.round(bpm * 10);
   doubleTime = p.double_time === "1"; dtCheck.checked = doubleTime;
   swing = parseInt(p.swing); swingSlider.value = swing; swingVal.textContent = swing + '%';
@@ -2174,13 +2221,13 @@ function buildSettingsPayload() {
 }
 function applySettingsPayload(p) {
   if (!p || typeof p !== 'object') return;
-  if (playing) { stopPlayback(); currentStep = 0; playing = false; paused = false; startBtn.innerHTML = '&#9654;'; clearHighlight(); }
+  if (playing) { stopPlayback(); currentStep = 0; playing = false; paused = false; setStartButtonState(false); clearHighlight(); }
   stopPractice();
   if (typeof p.bpm === 'number') { bpm = p.bpm; bpmSpin.value = bpm.toFixed(1); bpmSlider.value = Math.round(bpm * 10); }
   if (typeof p.doubleTime === 'boolean') { doubleTime = p.doubleTime; dtCheck.checked = doubleTime; }
   if (METER_CONFIG[p.meter]) { meter = p.meter; meterCombo.value = meter; engine.seqNumSteps = METER_CONFIG[meter].steps; }
   if (typeof p.swing === 'number') { swing = p.swing; swingSlider.value = swing; swingVal.textContent = swing + '%'; }
-  if (typeof p.useFlats === 'boolean') { useFlats = p.useFlats; $('flatsCheck').checked = useFlats; }
+  if (typeof p.useFlats === 'boolean') { useFlats = p.useFlats; $('flatsCheck').checked = useFlats; updateFlatsChip(); }
   if (typeof p.preroll === 'number') { prerollSlider.value = p.preroll; prerollValEl.textContent = p.preroll; prerollValue = p.preroll + 1; }
   if (typeof p.beatRepeat === 'number') { beatRepeatValue = p.beatRepeat; beatRepeatSlider.value = beatRepeatValue; beatRepeatValEl.textContent = beatRepeatValue; }
   if (typeof p.arpVol === 'number') { arpVolume = p.arpVol; arpVolSlider.value = p.arpVol; arpVolVal.textContent = p.arpVol.toFixed(2); }
@@ -2273,7 +2320,7 @@ cloudSaveBtn.addEventListener('click', cloudSave);
 cloudLoadBtn.addEventListener('click', () => cloudLoad(false));
 
 // ── Init ───────────────────────────────────────────────────────────
-applyDefaultPatterns(); buildGrid(); refreshPresetList(); initStaffCanvas(); buildScaleToggles();
+applyDefaultPatterns(); buildGrid(); refreshPresetList(); initStaffCanvas(); buildScaleToggles(); updateFlatsChip(); setStartButtonState(false);
 updateTuningNotes(); sizeFretCanvas();
 window.addEventListener('resize', () => {
   sizeFretCanvas();
