@@ -937,8 +937,7 @@ function playArpeggio(notes) {
 }
 
 // Play a rhythm bar on given midis (rhythm mode: chord stabs with the bar's rhythm).
-// Rendered double-time so the whole bar fits within half the sequencer cycle
-// (the "two bars" limit), and swing-aware so the feel matches the drums.
+// Rendered at the displayed rhythm timing, swing-aware so the feel matches the drums.
 function playRhythmArp(rhythm, chordNotes) {
   if (!rhythm || !chordNotes || !chordNotes.length) return;
   cancelArp();
@@ -946,8 +945,8 @@ function playRhythmArp(rhythm, chordNotes) {
   if (!ctx || ctx.state !== 'running') return;
   const s16 = getSixteenthDuration();
   const sr = swing / 100.0;
-  // Cumulative swung time of slot n, compressed 2x
-  const timeOfSlot = n => ((n >> 1) * 2 * s16 + (n % 2 ? 2 * s16 * sr : 0)) * 0.5;
+  // Cumulative swung time of slot n.
+  const timeOfSlot = n => (n >> 1) * 2 * s16 + (n % 2 ? 2 * s16 * sr : 0);
   const start = ctx.currentTime + 0.03;
   for (const ev of rhythm.events) {
     if (ev.r) continue;

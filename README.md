@@ -49,7 +49,7 @@ The lock button (Practice Settings, next to the Rhythm difficulty menu) freezes 
 While practicing, hit **Shift+Space** (desktop keyboard), **swipe up** (mobile), or tap **♪ Arp**:
 
 - The current note/chord/scale/triad plays as an arpeggio on a small subtractive synth (two detuned saws → resonant lowpass with a plucky filter envelope). Volume: *Arp vol* in Practice Settings.
-- In **Rhythm** mode it instead plays the displayed rhythm as chord stabs — an audio demo of the notation, rendered double-time (and swing-aware) so it fits the same window.
+- In **Rhythm** mode it instead plays the displayed rhythm as chord stabs — an audio demo of the notation, rendered at the displayed rhythm timing and swing-aware so the feel matches the drums.
 - The arpeggio always finishes within **two bars (half the sequencer cycle)** at the current BPM.
 - Swipes that scroll the page (or a list) are ignored — only a clean upward flick triggers it.
 - As each note sounds, the matching fretboard position flashes white — the pitches you hear are computed from the actual string/fret positions in the current tuning.
