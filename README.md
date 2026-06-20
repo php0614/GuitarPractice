@@ -92,6 +92,12 @@ In Memo mode, click/tap notes on the fretboard canvas to mark them (click again 
 
 The camera **Capture** button at the top-right of the fretboard panel (available in every mode) exports the fretboard plus the current overlay to a **transparent PNG** (RGBA, no page background) that always renders the full **22-fret** board even in portrait, and auto-downloads it.
 
+### Score visualizer & capture refinements
+
+In the horizontal/landscape layout the score visualizer is a **grand staff** — a treble staff over a bass staff (added below) sharing one continuous position axis, with middle C between them — so a much wider range of notes is shown. `.app.layout-horizontal .display-frame` grows to fit both staves. Portrait keeps the single treble staff.
+
+The captured PNG renders with square corners and extra top/left margin (the top open-string label is no longer clipped), and the detected chord name is drawn over it in white (white fill + white outline, no background) next to the root note.
+
 ## Files
 
 ```

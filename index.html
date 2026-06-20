@@ -98,7 +98,7 @@ body { background: #1A1A2E; color: #E0E0E0; font-family: "Helvetica Neue", Helve
   min-height: 106px; display: flex; flex-direction: column; align-items: center;
   justify-content: center; padding: 5px 8px; flex-shrink: 0;
 }
-.app.layout-horizontal .display-frame { min-height: 132px; }
+.app.layout-horizontal .display-frame { min-height: 252px; }
 .note-display { color: #FFD700; font-size: 42px; font-weight: bold; line-height: 1.1; }
 .extra-display { color: #00CED1; font-size: 16px; font-weight: bold; margin-top: 2px; }
 .status-display { color: #888; font-size: 14px; margin-top: 6px; }
@@ -1279,13 +1279,19 @@ function playRhythmArp(rhythm, chordNotes, leadIn = 0.03, startAt = null) {
 }
 
 // ── Staff Notation Canvas ──────────────────────────────────────────
-const STAFF_W = 180, STAFF_H = 144;
+const STAFF_W = 180, STAFF_H = 144, STAFF_H_GRAND = 224;
+// Grand staff (treble + bass) in the horizontal/landscape layout for a wider note range.
+function staffHeight() {
+  const r = document.getElementById('appRoot');
+  return (r && r.classList.contains('layout-horizontal')) ? STAFF_H_GRAND : STAFF_H;
+}
 function initStaffCanvas() {
   const canvas = document.getElementById('staffCanvas');
   if (!canvas) return;
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = STAFF_W * dpr; canvas.height = STAFF_H * dpr;
-  canvas.style.width = STAFF_W + 'px'; canvas.style.height = STAFF_H + 'px';
+  const H = staffHeight();
+  canvas.width = STAFF_W * dpr; canvas.height = H * dpr;
+  canvas.style.width = STAFF_W + 'px'; canvas.style.height = H + 'px';
   canvas.getContext('2d').scale(dpr, dpr);
 }
 // input: note name string (single note) OR array of {pos,acc} descriptors OR falsy (clear)
@@ -1310,29 +1316,46 @@ function drawStaffCanvas(input, isScale) {
   // Dynamic canvas width for scale mode
   const noteCount = noteDescs.length;
   const W = isScale && noteCount > 1 ? Math.max(STAFF_W, 66 + noteCount * 36) : STAFF_W;
+  const grand = staffHeight() === STAFF_H_GRAND;
+  const H = grand ? STAFF_H_GRAND : STAFF_H;
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = W * dpr; canvas.height = STAFF_H * dpr;
-  canvas.style.width = W + 'px'; canvas.style.height = STAFF_H + 'px';
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
   const c = canvas.getContext('2d');
   c.scale(dpr, dpr);
 
-  const lineSpacing = STAFF_H / 8;
-  const midY = STAFF_H / 2;
+  // One continuous position axis: y(pos) = midY - pos*unit. Treble lines at pos -4..4,
+  // bass lines at -16..-8 (grand). Middle C (pos -6) sits exactly between the two staves.
+  const lineSpacing = grand ? H / 16 : H / 8;
   const unit = lineSpacing / 2;
+  const midY = grand ? lineSpacing * 5 : H / 2;
   const staffLeft = W * 0.18, staffRight = W * 0.97;
   const staffColor = '#888', noteColor = '#FFD700';
 
-  // Draw staff lines
   c.strokeStyle = staffColor; c.lineWidth = 1;
-  for (let i = -2; i <= 2; i++) {
-    const y = midY - i * lineSpacing;
-    c.beginPath(); c.moveTo(staffLeft, y); c.lineTo(staffRight, y); c.stroke();
+  for (const p of [-4, -2, 0, 2, 4]) { const y = midY - p * unit; c.beginPath(); c.moveTo(staffLeft, y); c.lineTo(staffRight, y); c.stroke(); }
+  c.fillStyle = staffColor; c.textAlign = 'left'; c.textBaseline = 'middle';
+  c.font = (lineSpacing * (grand ? 4.2 : 5)) + 'px serif';
+  c.fillText('\u{1D11E}', W * 0.01, midY - lineSpacing * 0.5);   // treble clef
+  if (grand) {
+    for (const p of [-16, -14, -12, -10, -8]) { const y = midY - p * unit; c.beginPath(); c.moveTo(staffLeft, y); c.lineTo(staffRight, y); c.stroke(); }
+    c.fillStyle = staffColor; c.font = (lineSpacing * 2.8) + 'px serif';
+    c.fillText('\u{1D122}', W * 0.02, midY - (-11) * unit);      // bass clef
   }
-  // Treble clef
-  c.fillStyle = staffColor;
-  c.font = (lineSpacing * 5) + 'px serif';
-  c.textAlign = 'left'; c.textBaseline = 'middle';
-  c.fillText('\u{1D11E}', W * 0.01, midY - lineSpacing * 0.5);
+  // Ledger lines for a note head at canvas-x lx and staff position pos (grand-aware).
+  const drawLedgersAt = (lx, pos) => {
+    const pad = lineSpacing * 0.83;
+    c.strokeStyle = staffColor; c.lineWidth = 1;
+    const ln = y => { c.beginPath(); c.moveTo(lx - pad, y); c.lineTo(lx + pad, y); c.stroke(); };
+    if (grand) {
+      if (pos > 4) { for (let q = 6; q <= pos; q += 2) ln(midY - q * unit); }
+      else if (pos === -6) { ln(midY - (-6) * unit); }
+      else if (pos < -16) { for (let q = -18; q >= pos; q -= 2) ln(midY - q * unit); }
+    } else {
+      for (let q = -6; q >= pos; q -= 2) ln(midY - q * unit);
+      for (let q = 6; q <= pos; q += 2) ln(midY - q * unit);
+    }
+  };
 
   if (noteDescs.length === 0) return;
 
@@ -1351,9 +1374,7 @@ function drawStaffCanvas(input, isScale) {
       const noteY = midY - nd.pos * unit;
 
       // Ledger lines for this note
-      c.strokeStyle = staffColor; c.lineWidth = 1;
-      for (let p = -6; p >= nd.pos; p -= 2) { const y = midY - p * unit; c.beginPath(); c.moveTo(noteX-lpad,y); c.lineTo(noteX+lpad,y); c.stroke(); }
-      for (let p =  6; p <= nd.pos; p += 2) { const y = midY - p * unit; c.beginPath(); c.moveTo(noteX-lpad,y); c.lineTo(noteX+lpad,y); c.stroke(); }
+      drawLedgersAt(noteX, nd.pos);
 
       // Note head
       c.fillStyle = noteColor;
@@ -1372,12 +1393,9 @@ function drawStaffCanvas(input, isScale) {
     // ── Chord / single-note mode ──
     const noteX = W * 0.70;
     const positions = noteDescs.map(d => d.pos);
-    const minPos = Math.min(...positions), maxPos = Math.max(...positions);
 
-    // Ledger lines
-    c.strokeStyle = staffColor; c.lineWidth = 1;
-    for (let p = -6; p >= minPos; p -= 2) { const y = midY - p * unit; c.beginPath(); c.moveTo(noteX-lpad,y); c.lineTo(noteX+lpad,y); c.stroke(); }
-    for (let p =  6; p <= maxPos; p += 2) { const y = midY - p * unit; c.beginPath(); c.moveTo(noteX-lpad,y); c.lineTo(noteX+lpad,y); c.stroke(); }
+    // Ledger lines (per note, grand-aware)
+    for (const nd of noteDescs) drawLedgersAt(noteX, nd.pos);
 
     // Note heads and accidentals
     c.fillStyle = noteColor;
@@ -1391,18 +1409,19 @@ function drawStaffCanvas(input, isScale) {
       }
     }
 
-    // Stem
-    const avgPos = positions.reduce((a,b)=>a+b,0) / positions.length;
+    // Stem(s): one per staff group so a grand-staff chord doesn't draw a stem across the gap.
     c.strokeStyle = noteColor; c.lineWidth = 1.5;
-    c.beginPath();
-    if (avgPos < 0) {
-      const hy = midY - maxPos * unit;
-      c.moveTo(noteX+rx-1, hy); c.lineTo(noteX+rx-1, hy - lineSpacing*3.5);
-    } else {
-      const ly = midY - minPos * unit;
-      c.moveTo(noteX-rx+1, ly); c.lineTo(noteX-rx+1, ly + lineSpacing*3.5);
-    }
-    c.stroke();
+    const stemFor = (ps) => {
+      if (!ps.length) return;
+      const mn = Math.min(...ps), mx = Math.max(...ps);
+      const avg = ps.reduce((a,b)=>a+b,0) / ps.length;
+      c.beginPath();
+      if (avg < 0) { const hy = midY - mx * unit; c.moveTo(noteX+rx-1, hy); c.lineTo(noteX+rx-1, hy - lineSpacing*3.5); }
+      else { const ly = midY - mn * unit; c.moveTo(noteX-rx+1, ly); c.lineTo(noteX-rx+1, ly + lineSpacing*3.5); }
+      c.stroke();
+    };
+    if (grand) { stemFor(positions.filter(p => p >= -6)); stemFor(positions.filter(p => p < -6)); }
+    else stemFor(positions);
   }
 }
 
@@ -1563,9 +1582,12 @@ let _fretGeom = null;          // layout geometry
 // Deterministic pseudo-random for wood grain (stable across redraws)
 function _grainRand(seed) { let x = Math.sin(seed * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
 
-function computeFretGeometry(W, H, maxFretsArg) {
+function computeFretGeometry(W, H, maxFretsArg, opts) {
+  opts = opts || {};
   const maxFrets = maxFretsArg != null ? maxFretsArg : currentDisplayFrets();
-  const padT = 10, padB = 24, labelW = 26;
+  const padT = opts.padTop != null ? opts.padTop : 10;
+  const padB = opts.padBottom != null ? opts.padBottom : 24;
+  const labelW = opts.labelW != null ? opts.labelW : 26;
   const nutX = labelW + 8;
   const boardR = W - 6;
   const d = n => 1 - Math.pow(2, -n / 12);
@@ -1585,7 +1607,7 @@ function noteX(g, f) {
 function buildFretBase(W, H, tuning, opts) {
   opts = opts || {};
   const maxFrets = opts.maxFrets != null ? opts.maxFrets : currentDisplayFrets();
-  const g = computeFretGeometry(W, H, maxFrets);
+  const g = computeFretGeometry(W, H, maxFrets, { padTop: opts.padTop, padBottom: opts.padBottom, labelW: opts.labelW });
   const cv = document.createElement('canvas');
   const dpr = opts.scale != null ? opts.scale : (window.devicePixelRatio || 1);
   cv.width = W * dpr; cv.height = H * dpr;
@@ -2593,14 +2615,40 @@ memoBtn.addEventListener('click', async () => {
 });
 
 // ── Capture: render the fretboard (always 22 frets) + current dots as a transparent PNG ──
+// Square corners, extra top/left margin so the top open-string label is never clipped,
+// and the chord name overlaid in white near the root note.
 function captureFretboardPNG() {
-  const W = 1200, H = 240, scale = 3;
-  const built = buildFretBase(W, H, currentTuning, { maxFrets: LANDSCAPE_FRETS, transparent: true, scale });
+  const W = 1240, H = 268, scale = 3;
+  const built = buildFretBase(W, H, currentTuning,
+    { maxFrets: LANDSCAPE_FRETS, transparent: true, scale, padTop: 26, padBottom: 30, labelW: 34 });
   const cv = built.canvas, g = built.geom;
   const ctx = cv.getContext('2d');
   const stringGap = (g.stringY[0] - g.stringY[5]) / 5;
   const baseR = Math.min(stringGap * 0.46, 10);
   drawFretDots(ctx, g, fretMarkers, LANDSCAPE_FRETS, baseR);
+
+  // Chord name: white text + white stroke, no background, around the root note.
+  const name = (typeof noteDisplay !== 'undefined' && noteDisplay.textContent) ? noteDisplay.textContent.trim() : '';
+  if (name) {
+    const root = fretMarkers.find(d => d.type === 'root') || fretMarkers[0];
+    const ax = root ? noteX(g, root.f) : g.nutX + 40;
+    const ay = root ? g.stringY[root.s] : g.stringY[5];
+    const fontPx = Math.max(20, Math.round(baseR * 2.6));
+    ctx.font = 'bold ' + fontPx + 'px "Helvetica Neue", Helvetica, Arial, sans-serif';
+    ctx.textBaseline = 'bottom';
+    ctx.textAlign = 'left';
+    let tx = ax + baseR * 1.4;
+    let ty = ay - baseR * 1.4;
+    if (ty - fontPx < 2) ty = ay + baseR * 1.4 + fontPx;           // drop below if too near the top
+    if (tx + ctx.measureText(name).width > W - 6) { ctx.textAlign = 'right'; tx = ax - baseR * 1.4; }
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = Math.max(2.5, fontPx * 0.16);
+    ctx.strokeText(name, tx, ty);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText(name, tx, ty);
+  }
+
   const stamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
   const a = document.createElement('a');
   a.href = cv.toDataURL('image/png');
