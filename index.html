@@ -2634,7 +2634,7 @@ function captureFretboardPNG() {
     const ax = root ? noteX(g, root.f) : g.nutX + 40;
     const ay = root ? g.stringY[root.s] : g.stringY[5];
     const fontPx = Math.max(20, Math.round(baseR * 2.6));
-    ctx.font = 'bold ' + fontPx + 'px "Helvetica Neue", Helvetica, Arial, sans-serif';
+    ctx.font = '300 ' + fontPx + 'px "Helvetica Neue", Helvetica, Arial, sans-serif';
     ctx.textBaseline = 'bottom';
     ctx.textAlign = 'left';
     let tx = ax + baseR * 1.4;
@@ -2642,8 +2642,8 @@ function captureFretboardPNG() {
     if (ty - fontPx < 2) ty = ay + baseR * 1.4 + fontPx;           // drop below if too near the top
     if (tx + ctx.measureText(name).width > W - 6) { ctx.textAlign = 'right'; tx = ax - baseR * 1.4; }
     ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#FFFFFF';
-    ctx.lineWidth = Math.max(2.5, fontPx * 0.16);
+    ctx.strokeStyle = '#000000';                                   // thin white text with a black outline
+    ctx.lineWidth = Math.max(1.5, fontPx * 0.08);
     ctx.strokeText(name, tx, ty);
     ctx.fillStyle = '#FFFFFF';
     ctx.fillText(name, tx, ty);
