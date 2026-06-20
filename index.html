@@ -7,7 +7,78 @@
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 body { background: #1A1A2E; color: #E0E0E0; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 13px; overflow-x: hidden; }
-.app { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; padding: 5px; gap: 4px; max-width: 430px; margin: 0 auto; }
+.app {
+  min-height: 100vh; min-height: 100dvh; padding: 5px; gap: 4px;
+  max-width: 430px; margin: 0 auto;
+}
+.app.layout-vertical { display: flex; flex-direction: column; }
+.app.layout-horizontal {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.95fr) minmax(300px, 1fr) minmax(420px, 1.25fr);
+  grid-template-areas:
+    "fret fret fret"
+    "display practiceHeader sequencerHeader"
+    "display practice sequencer"
+    "scalesHeader practice sequencer"
+    "scales calendarHeader sequencer"
+    "scales calendar drums"
+    "modes calendar drums"
+    "transport calendar presetsHeader"
+    "cloudHeader calendar presets"
+    "cloud calendar settingsHeader"
+    "cloud calendar settings";
+  align-items: start;
+  width: min(1240px, calc(100vw - 12px));
+  max-width: min(1240px, calc(100vw - 12px));
+  gap: 6px;
+}
+.app.layout-horizontal .display-frame { grid-area: display; }
+.app.layout-horizontal .fret-panel { grid-area: fret; }
+.app.layout-horizontal .mode-row { grid-area: modes; }
+.app.layout-horizontal .transport { grid-area: transport; }
+.app.layout-horizontal [data-section="practice"] { grid-area: practiceHeader; }
+.app.layout-horizontal #practiceSection { grid-area: practice; }
+.app.layout-horizontal [data-section="sequencer"] { grid-area: sequencerHeader; }
+.app.layout-horizontal #sequencerSection { grid-area: sequencer; }
+.app.layout-horizontal .drum-vol-block { grid-area: drums; }
+.app.layout-horizontal [data-section="presets"] { grid-area: presetsHeader; }
+.app.layout-horizontal #presetsSection { grid-area: presets; }
+.app.layout-horizontal [data-section="settings"] { grid-area: settingsHeader; }
+.app.layout-horizontal #settingsSection { grid-area: settings; }
+.app.layout-horizontal [data-section="scaleToggles"] { grid-area: scalesHeader; }
+.app.layout-horizontal #scaleTogglesSection { grid-area: scales; }
+.app.layout-horizontal [data-section="practiceCalendar"] { grid-area: calendarHeader; }
+.app.layout-horizontal #practiceCalendarSection { grid-area: calendar; }
+.app.layout-horizontal [data-section="cloud"] { grid-area: cloudHeader; }
+.app.layout-horizontal #cloudSection { grid-area: cloud; }
+@media (min-width: 821px) {
+  .app.layout-horizontal {
+    row-gap: 2px;
+    column-gap: 6px;
+  }
+  .app.layout-horizontal .fret-panel {
+    margin-bottom: 4px;
+  }
+  .app.layout-horizontal .inner-section {
+    padding-top: 2px;
+    padding-bottom: 4px;
+  }
+  .app.layout-horizontal.presets-collapsed [data-section="settings"] {
+    grid-area: presets;
+    position: relative;
+    z-index: 1;
+  }
+  .app.layout-horizontal.presets-collapsed #settingsSection {
+    grid-area: settingsHeader;
+  }
+}
+@media (max-width: 820px) {
+  .app.layout-horizontal {
+    display: flex;
+    flex-direction: column;
+    max-width: 430px;
+  }
+}
 
 /* ── Collapsible Sections ─────────────────────────── */
 .section-header {
@@ -28,6 +99,7 @@ body { background: #1A1A2E; color: #E0E0E0; font-family: "Helvetica Neue", Helve
   min-height: 106px; display: flex; flex-direction: column; align-items: center;
   justify-content: center; padding: 5px 8px; flex-shrink: 0;
 }
+.app.layout-horizontal .display-frame { min-height: 132px; }
 .note-display { color: #FFD700; font-size: 42px; font-weight: bold; line-height: 1.1; }
 .extra-display { color: #00CED1; font-size: 16px; font-weight: bold; margin-top: 2px; }
 .status-display { color: #888; font-size: 14px; margin-top: 6px; }
@@ -44,6 +116,7 @@ body { background: #1A1A2E; color: #E0E0E0; font-family: "Helvetica Neue", Helve
   background: #12122A; border: 2px solid #333; border-radius: 12px;
   padding: 5px; flex-shrink: 0;
 }
+.app.layout-horizontal .fret-panel { align-self: stretch; padding: 6px; }
 #fretCanvas { width: 100%; display: block; border-radius: 6px; }
 .fret-options { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
 .fret-options label { color: #CCC; font-size: 12px; }
@@ -109,6 +182,7 @@ select {
 #lockBtn { width: 60px; }
 #arpLockBtn { width: 45px; }
 #rootLockBtn { width: 50px; }
+.layout-toggle-btn { width: 64px; }
 .arp-slot { width: 45px; height: 28px; flex: 0 0 45px; }
 .root-slot { width: 52.5px; height: 28px; flex: 0 0 52.5px; }
 #beatCountdown { font-weight: bold; color: #FF6B35; font-size: 11px; }
@@ -182,6 +256,59 @@ select {
 }
 .scale-toggle-label input[type="checkbox"] { accent-color: #FF6B35; width: 15px; height: 15px; }
 
+/* ── Settings / Practice Calendar ────────────────── */
+.settings-field {
+  display: flex; flex-direction: column; gap: 3px;
+}
+.settings-field label {
+  font-size: 11px; font-weight: bold; color: #CCC;
+}
+.settings-field input[type="text"] {
+  background: #2A2A3E; color: #E0E0E0; border: 1px solid #555;
+  border-radius: 6px; padding: 6px 8px; font-size: 12px; height: 32px;
+}
+.settings-field input[type="text"]:focus { border-color: #FF6B35; outline: none; }
+.settings-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.calendar-status { font-size: 11px; color: #888; min-height: 14px; }
+.calendar-status.ok { color: #6FCF6F; }
+.calendar-status.err { color: #FF6B6B; }
+.calendar-status.busy { color: #00CED1; }
+.calendar-mode-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+}
+.calendar-mode-btn {
+  height: 30px; background: #2A2A3E; color: #E0E0E0; border: 1px solid #555;
+  border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer;
+}
+.calendar-mode-btn.active { background: #3A2A1E; border-color: #FF6B35; color: #FFD700; }
+.practice-calendar-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;
+}
+.calendar-weekday { color: #888; font-size: 9px; text-align: center; font-weight: bold; }
+.calendar-day {
+  min-height: 46px; border: 1px solid #444; border-radius: 6px;
+  background: #222238; padding: 4px 3px; display: flex; flex-direction: column; gap: 2px;
+}
+.calendar-day.empty { opacity: 0.25; }
+.calendar-day.today { border-color: #00CED1; }
+.calendar-day.has-practice { background: #2C2A25; border-color: #FF6B35; }
+.calendar-day-num { font-size: 10px; color: #DDD; font-weight: bold; }
+.calendar-day-count { font-size: 9px; color: #FFD700; }
+.calendar-day-min { font-size: 9px; color: #AAA; }
+.calendar-summary { color: #CCC; font-size: 11px; }
+.practice-history-list {
+  background: #2A2A3E; border: 1px solid #555; border-radius: 6px;
+  max-height: 120px; overflow-y: auto;
+}
+.practice-history-row {
+  display: flex; justify-content: space-between; gap: 8px; padding: 6px 8px;
+  border-bottom: 1px solid #444; font-size: 11px;
+}
+.practice-history-row:last-child { border-bottom: 0; }
+.practice-history-date { color: #E0E0E0; font-weight: bold; }
+.practice-history-time { color: #AAA; }
+.practice-history-duration { color: #FFD700; white-space: nowrap; }
+
 /* ── Cloud Sync ──────────────────────────────────── */
 .cloud-row { display: flex; gap: 6px; align-items: center; }
 .cloud-btn {
@@ -198,7 +325,7 @@ select {
 </style>
 </head>
 <body>
-<div class="app">
+<div class="app layout-horizontal" id="appRoot">
 
   <!-- Practice Display (always visible) -->
   <div class="display-frame" id="displayFrame">
@@ -258,8 +385,8 @@ select {
       </div>
       <div class="slider-row">
         <label>Maintain:</label>
-        <input type="range" id="beatRepeatSlider" min="1" max="16" value="8">
-        <span class="val" id="beatRepeatVal">8</span>
+        <input type="range" id="beatRepeatSlider" min="1" max="16" value="4">
+        <span class="val" id="beatRepeatVal">4</span>
       </div>
       <div class="slider-row">
         <label>Arp vol:</label>
@@ -282,6 +409,8 @@ select {
         <div class="practice-control-row">
           <label class="chip-control root-chip"><span class="btn-icon">◎</span><span>Root</span><select id="rootSelect" title="Root note used while Root is locked"></select></label>
           <span id="beatCountdown"></span>
+          <span class="control-spacer"></span>
+          <button id="layoutToggleBtn" class="lock-btn layout-toggle-btn" title="Switch to vertical layout"><span class="btn-icon">⇅</span><span>Tall</span></button>
           <span class="control-spacer"></span>
           <button id="arpLockBtn" class="lock-btn" title="Lock the arpeggio position (keep repeating the same one) — A">&#128275; Arp</button>
           <span class="root-slot" aria-hidden="true"></span>
@@ -358,6 +487,29 @@ select {
     </div>
   </div>
 
+  <!-- Settings (collapsible) -->
+  <div class="section-header collapsed" data-section="settings">
+    <span class="section-title"><span class="section-icon">⚙</span><span>Settings</span></span><span class="arrow">&#9660;</span>
+  </div>
+  <div class="section-body collapsed" id="settingsSection">
+    <div class="inner-section">
+      <div class="settings-field">
+        <label for="gcalClientIdInput">Google OAuth Client ID</label>
+        <input type="text" id="gcalClientIdInput" placeholder="123456789-abc.apps.googleusercontent.com">
+      </div>
+      <div class="settings-field">
+        <label for="gcalCalendarInput">Calendar name, ID, or primary</label>
+        <input type="text" id="gcalCalendarInput" placeholder="primary">
+      </div>
+      <div class="settings-row">
+        <button class="cloud-btn primary" id="gcalSaveBtn">Save</button>
+        <button class="cloud-btn" id="gcalSignInBtn">Sign in with Google</button>
+        <button class="cloud-btn" id="gcalDisconnectBtn">Disconnect</button>
+      </div>
+      <div class="calendar-status" id="gcalStatus">Google Calendar is not connected.</div>
+    </div>
+  </div>
+
   <!-- Scale Toggles (collapsible) -->
   <div class="section-header collapsed" data-section="scaleToggles">
     <span class="section-title"><span class="section-icon">☑</span><span>Scale Toggles</span></span><span class="arrow">&#9660;</span>
@@ -365,6 +517,27 @@ select {
   <div class="section-body collapsed" id="scaleTogglesSection">
     <div class="inner-section">
       <div class="scale-toggles-grid" id="scaleTogglesGrid"></div>
+    </div>
+  </div>
+
+  <!-- Practice Calendar (collapsible) -->
+  <div class="section-header collapsed" data-section="practiceCalendar">
+    <span class="section-title"><span class="section-icon">◷</span><span>Practice Calendar</span></span><span class="arrow">&#9660;</span>
+  </div>
+  <div class="section-body collapsed" id="practiceCalendarSection">
+    <div class="inner-section">
+      <div class="calendar-mode-row">
+        <button class="calendar-mode-btn active" id="practiceCalendarWeekBtn">Week</button>
+        <button class="calendar-mode-btn" id="practiceCalendarMonthBtn">Month</button>
+      </div>
+      <div class="practice-calendar-grid" id="practiceCalendarGrid"></div>
+      <div class="calendar-summary" id="practiceCalendarSummary">No practice history yet.</div>
+      <div class="settings-row">
+        <button class="cloud-btn primary" id="practiceHistorySyncBtn">Sync History with Google Calendar</button>
+        <button class="cloud-btn" id="practiceHistoryRemoveBtn">Remove the current practice from history</button>
+      </div>
+      <div class="calendar-status" id="practiceHistoryStatus">Practice history is stored locally in this browser.</div>
+      <div class="practice-history-list" id="practiceHistoryList"></div>
     </div>
   </div>
 
@@ -386,19 +559,28 @@ select {
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ── Collapsible sections ───────────────────────────────────────────
+function refreshOpenSectionHeights() {
+  document.querySelectorAll('.section-body:not(.collapsed)').forEach(el => {
+    el.style.maxHeight = el.scrollHeight + 260 + 'px';
+  });
+}
+function syncSectionLayoutClasses() {
+  const root = document.getElementById('appRoot');
+  const presets = document.getElementById('presetsSection');
+  if (root && presets) root.classList.toggle('presets-collapsed', presets.classList.contains('collapsed'));
+}
 document.querySelectorAll('.section-header').forEach(header => {
   header.addEventListener('click', () => {
     header.classList.toggle('collapsed');
     const sectionId = header.dataset.section + 'Section';
     document.getElementById(sectionId).classList.toggle('collapsed');
+    syncSectionLayoutClasses();
+    requestAnimationFrame(refreshOpenSectionHeights);
   });
 });
 // Set max-height for open sections after layout
-requestAnimationFrame(() => {
-  document.querySelectorAll('.section-body:not(.collapsed)').forEach(el => {
-    el.style.maxHeight = el.scrollHeight + 200 + 'px';
-  });
-});
+requestAnimationFrame(syncSectionLayoutClasses);
+requestAnimationFrame(refreshOpenSectionHeights);
 
 // ── Constants ──────────────────────────────────────────────────────
 const TRACK_INFO = [
@@ -564,7 +746,17 @@ const TUNINGS = {
   'Open D':   [38, 45, 50, 54, 57, 62],  // D A D F# A D
   'DADGAD':   [38, 45, 50, 55, 57, 62],  // D A D G A D
 };
-const NUM_FRETS = 15;
+const PORTRAIT_FRETS = 15;
+const LANDSCAPE_FRETS = 22;
+const ARP_MIN_FRET = 1;
+const ARP_MAX_FRET = 15;
+
+function isWideLandscapeLayout() {
+  return document.getElementById('appRoot')?.classList.contains('layout-horizontal') && window.innerWidth > 820;
+}
+function currentDisplayFrets() {
+  return isWideLandscapeLayout() ? LANDSCAPE_FRETS : PORTRAIT_FRETS;
+}
 
 // ── Triad mode data ────────────────────────────────────────────────
 const TRIAD_QUALITIES = {
@@ -603,22 +795,23 @@ function getTriadNoteDescs(root, quality, inversion) {
 }
 // Map a triad (root pc, quality, inversion) onto 3 specific strings of the
 // current tuning. Returns [{s, f, midi, role}] (role: 0=root,1=third,2=fifth)
-// or null if it cannot fit within NUM_FRETS.
+// or null if it cannot fit within the current visible fret range.
 function computeTriadShape(rootPc, quality, inversion, setIdx, tuning) {
+  const maxFrets = currentDisplayFrets();
   const stack = triadStack(quality, inversion);
   const roles = [inversion % 3, (inversion + 1) % 3, (inversion + 2) % 3];
   const strings = TRIAD_STRING_SETS[setIdx].idx;
   const candidates = [];
   // Try every octave of the bass note on the bass string
   const bassPc = (rootPc + stack[0]) % 12;
-  for (let f0 = 0; f0 <= NUM_FRETS; f0++) {
+  for (let f0 = 0; f0 <= maxFrets; f0++) {
     if ((tuning[strings[0]] + f0) % 12 !== bassPc) continue;
     const m0 = tuning[strings[0]] + f0;
     const m1 = m0 + (stack[1] - stack[0]);
     const m2 = m0 + (stack[2] - stack[0]);
     const f1 = m1 - tuning[strings[1]];
     const f2 = m2 - tuning[strings[2]];
-    if (f1 < 0 || f1 > NUM_FRETS || f2 < 0 || f2 > NUM_FRETS) continue;
+    if (f1 < 0 || f1 > maxFrets || f2 < 0 || f2 > maxFrets) continue;
     const frets = [f0, f1, f2];
     const spread = Math.max(...frets) - Math.min(...frets);
     candidates.push({ frets, midis: [m0, m1, m2], spread, lo: Math.min(...frets) });
@@ -642,17 +835,18 @@ const CAGED_SHAPES = {
 };
 // Resolve a CAGED form for a root note → [{s, f, midi, isRoot}] or null
 function computeCagedShape(rootPc, form, tuning) {
+  const maxFrets = currentDisplayFrets();
   const shape = CAGED_SHAPES[form];
   if (!shape) return null;
   const open = tuning[shape.anchor];
   let R = -1;
-  for (let f = shape.minR; f <= NUM_FRETS; f++) {
+  for (let f = shape.minR; f <= maxFrets; f++) {
     if ((open + f) % 12 === rootPc) { R = f; break; }
   }
   if (R < 0) return null;
   const maxOff = Math.max(...shape.dots.map(d => d[1]));
-  if (R + maxOff > NUM_FRETS && R - 12 >= shape.minR) R -= 12;
-  if (R + maxOff > NUM_FRETS) return null;
+  if (R + maxOff > maxFrets && R - 12 >= shape.minR) R -= 12;
+  if (R + maxOff > maxFrets) return null;
   const rootSet = new Set(shape.roots.map(([s, o]) => s + ':' + o));
   return shape.dots.map(([s, o]) => ({
     s, f: R + o, midi: tuning[s] + R + o, isRoot: rootSet.has(s + ':' + o),
@@ -828,8 +1022,8 @@ class AudioEngine {
           this._playSample(track.name, this._nextStepTime, track.envMult * s16);
       }
       if (this.seqOnStep) {
-        const s = step, delay = Math.max(0, (this._nextStepTime - this.ctx.currentTime) * 1000);
-        setTimeout(() => this.seqOnStep(s), delay);
+        const s = step, stepTime = this._nextStepTime, delay = Math.max(0, (stepTime - this.ctx.currentTime) * 1000);
+        setTimeout(() => this.seqOnStep(s, stepTime), delay);
       }
       this._nextStepTime += this._getStepDuration(step);
       this.seqStep = (step + 1) % this.seqNumSteps;
@@ -896,6 +1090,7 @@ function synthNote(midi, when, dur) {
 }
 
 function cancelArp() {
+  pendingArpLaunch = null;
   const ctx = engine.ctx;
   const now = ctx ? ctx.currentTime : 0;
   for (const v of _arpVoices.splice(0)) {
@@ -913,15 +1108,15 @@ function cancelArp() {
 
 // Play a sequence of notes [{midi, s, f}] as an arpeggio that ends within
 // two bars = half of the sequencer cycle. Highlights fretboard dots in sync.
-function playArpeggio(notes) {
-  if (!notes || !notes.length) return;
+function playArpeggio(notes, leadIn = 0.03, startAt = null) {
+  if (!notes || !notes.length) return 0;
   cancelArp();
   const ctx = engine.ctx;
-  if (!ctx || ctx.state !== 'running') return;
+  if (!ctx || ctx.state !== 'running') return 0;
   const s16 = getSixteenthDuration();
   const total = (engine.seqNumSteps / 2) * s16;          // half the cycle
   const spacing = total / Math.max(notes.length, 4);     // snappy for short arps
-  const start = ctx.currentTime + 0.03;
+  const start = startAt == null ? ctx.currentTime + leadIn : Math.max(startAt + leadIn, ctx.currentTime);
   notes.forEach((n, i) => {
     const when = start + i * spacing;
     synthNote(n.midi, when, Math.min(spacing * 1.9, total - i * spacing));
@@ -934,20 +1129,21 @@ function playArpeggio(notes) {
   _arpTimeouts.push(setTimeout(clearFretHighlight, (start - ctx.currentTime + total) * 1000 + 150));
   arpBtn.classList.add('flash');
   _arpTimeouts.push(setTimeout(() => arpBtn.classList.remove('flash'), 250));
+  return start - ctx.currentTime + total + 0.15;
 }
 
 // Play a rhythm bar on given midis (rhythm mode: chord stabs with the bar's rhythm).
 // Rendered at the displayed rhythm timing, swing-aware so the feel matches the drums.
-function playRhythmArp(rhythm, chordNotes) {
-  if (!rhythm || !chordNotes || !chordNotes.length) return;
+function playRhythmArp(rhythm, chordNotes, leadIn = 0.03, startAt = null) {
+  if (!rhythm || !chordNotes || !chordNotes.length) return 0;
   cancelArp();
   const ctx = engine.ctx;
-  if (!ctx || ctx.state !== 'running') return;
+  if (!ctx || ctx.state !== 'running') return 0;
   const s16 = getSixteenthDuration();
   const sr = swing / 100.0;
   // Cumulative swung time of slot n.
   const timeOfSlot = n => (n >> 1) * 2 * s16 + (n % 2 ? 2 * s16 * sr : 0);
-  const start = ctx.currentTime + 0.03;
+  const start = startAt == null ? ctx.currentTime + leadIn : Math.max(startAt + leadIn, ctx.currentTime);
   for (const ev of rhythm.events) {
     if (ev.r) continue;
     const when = start + timeOfSlot(ev.slot);
@@ -963,10 +1159,11 @@ function playRhythmArp(rhythm, chordNotes) {
   _arpTimeouts.push(setTimeout(clearFretHighlight, (start - ctx.currentTime + total) * 1000 + 150));
   arpBtn.classList.add('flash');
   _arpTimeouts.push(setTimeout(() => arpBtn.classList.remove('flash'), 250));
+  return start - ctx.currentTime + total + 0.15;
 }
 
 // ── Staff Notation Canvas ──────────────────────────────────────────
-const STAFF_W = 150, STAFF_H = 120;
+const STAFF_W = 180, STAFF_H = 144;
 function initStaffCanvas() {
   const canvas = document.getElementById('staffCanvas');
   if (!canvas) return;
@@ -996,7 +1193,7 @@ function drawStaffCanvas(input, isScale) {
 
   // Dynamic canvas width for scale mode
   const noteCount = noteDescs.length;
-  const W = isScale && noteCount > 1 ? Math.max(STAFF_W, 55 + noteCount * 30) : STAFF_W;
+  const W = isScale && noteCount > 1 ? Math.max(STAFF_W, 66 + noteCount * 36) : STAFF_W;
   const dpr = window.devicePixelRatio || 1;
   canvas.width = W * dpr; canvas.height = STAFF_H * dpr;
   canvas.style.width = W + 'px'; canvas.style.height = STAFF_H + 'px';
@@ -1251,13 +1448,14 @@ let _fretGeom = null;          // layout geometry
 function _grainRand(seed) { let x = Math.sin(seed * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
 
 function computeFretGeometry(W, H) {
+  const maxFrets = currentDisplayFrets();
   const padT = 10, padB = 24, labelW = 26;
   const nutX = labelW + 8;
   const boardR = W - 6;
   const d = n => 1 - Math.pow(2, -n / 12);
-  const dMax = d(NUM_FRETS);
+  const dMax = d(maxFrets);
   const fretX = []; // fretX[n] = x of fret wire n (0 = nut)
-  for (let n = 0; n <= NUM_FRETS; n++) fretX.push(nutX + (d(n) / dMax) * (boardR - nutX));
+  for (let n = 0; n <= maxFrets; n++) fretX.push(nutX + (d(n) / dMax) * (boardR - nutX));
   const stringY = []; // index 0 = low E (bottom) .. 5 = high E (top)
   for (let i = 0; i < 6; i++) stringY.push(H - padB - i * (H - padT - padB) / 5);
   return { W, H, padT, padB, nutX, boardR, fretX, stringY };
@@ -1269,6 +1467,7 @@ function noteX(g, f) {
 }
 
 function buildFretBase(W, H, tuning) {
+  const maxFrets = currentDisplayFrets();
   const g = computeFretGeometry(W, H);
   const cv = document.createElement('canvas');
   const dpr = window.devicePixelRatio || 1;
@@ -1313,11 +1512,11 @@ function buildFretBase(W, H, tuning) {
   const midY = (boardTop + boardBot) / 2;
   const inlayR = Math.min(7, (boardBot - boardTop) * 0.075);
   c.fillStyle = 'rgba(216,208,192,0.8)';
-  for (const f of [3, 5, 7, 9, 15]) {
-    if (f > NUM_FRETS) continue;
+  for (const f of [3, 5, 7, 9, 15, 17, 19, 21]) {
+    if (f > maxFrets) continue;
     c.beginPath(); c.arc(noteX(g, f), midY, inlayR, 0, Math.PI * 2); c.fill();
   }
-  if (NUM_FRETS >= 12) {
+  if (maxFrets >= 12) {
     const x12 = noteX(g, 12);
     const off = (boardBot - boardTop) * 0.22;
     c.beginPath(); c.arc(x12, midY - off, inlayR, 0, Math.PI * 2); c.fill();
@@ -1325,7 +1524,7 @@ function buildFretBase(W, H, tuning) {
   }
 
   // Fret wires (metallic)
-  for (let n = 1; n <= NUM_FRETS; n++) {
+  for (let n = 1; n <= maxFrets; n++) {
     const x = fretX[n];
     const fg = c.createLinearGradient(x - 2, 0, x + 2, 0);
     fg.addColorStop(0, '#6A6A72');
@@ -1381,8 +1580,8 @@ function buildFretBase(W, H, tuning) {
   c.fillStyle = '#777';
   c.font = '9px -apple-system, sans-serif';
   c.textAlign = 'center'; c.textBaseline = 'top';
-  for (const f of [3, 5, 7, 9, 12, 15]) {
-    if (f > NUM_FRETS) continue;
+  for (const f of [3, 5, 7, 9, 12, 15, 17, 19, 21]) {
+    if (f > maxFrets) continue;
     c.fillText(String(f), noteX(g, f), boardBot + 4);
   }
   return { canvas: cv, geom: g };
@@ -1390,8 +1589,9 @@ function buildFretBase(W, H, tuning) {
 
 function sizeFretCanvas() {
   const panel = document.getElementById('fretPanel');
-  const W = Math.max(280, panel.clientWidth - 16);
-  const H = Math.round(Math.min(210, Math.max(140, W * 0.26)));
+  const wide = isWideLandscapeLayout();
+  const W = Math.max(wide ? 580 : 280, panel.clientWidth - 16);
+  const H = Math.round(Math.min(wide ? 280 : 210, Math.max(wide ? 170 : 140, W * (wide ? 0.235 : 0.26))));
   const dpr = window.devicePixelRatio || 1;
   fretCanvas.width = W * dpr; fretCanvas.height = H * dpr;
   fretCanvas.style.width = W + 'px'; fretCanvas.style.height = H + 'px';
@@ -1403,10 +1603,11 @@ function sizeFretCanvas() {
 function drawFretboard() {
   const dpr = window.devicePixelRatio || 1;
   const W = fretCanvas.width / dpr, H = fretCanvas.height / dpr;
+  const maxFrets = currentDisplayFrets();
   if (W < 10) return;
-  if (!_fretBase || _fretBase.W !== W || _fretBase.H !== H || _fretBase.tuning !== currentTuning) {
+  if (!_fretBase || _fretBase.W !== W || _fretBase.H !== H || _fretBase.tuning !== currentTuning || _fretBase.maxFrets !== maxFrets) {
     const built = buildFretBase(W, H, currentTuning);
-    _fretBase = { W, H, tuning: currentTuning, canvas: built.canvas };
+    _fretBase = { W, H, tuning: currentTuning, maxFrets, canvas: built.canvas };
     _fretGeom = built.geom;
   }
   fretCtx.clearRect(0, 0, W, H);
@@ -1417,7 +1618,7 @@ function drawFretboard() {
   const baseR = Math.min(stringGap * 0.46, 10);
 
   for (const dot of fretMarkers) {
-    if (dot.f < 0 || dot.f > NUM_FRETS) continue;
+    if (dot.f < 0 || dot.f > maxFrets) continue;
     const x = noteX(g, dot.f), y = g.stringY[dot.s];
     const r = dot.type === 'root' ? baseR : baseR * 0.88;
     fretCtx.save();
@@ -1453,7 +1654,7 @@ function drawFretboard() {
   }
 
   // Arpeggio highlight pulse
-  if (fretHighlight) {
+  if (fretHighlight && fretHighlight.f >= 0 && fretHighlight.f <= maxFrets) {
     const age = performance.now() - fretHighlight.t0;
     const x = noteX(g, fretHighlight.f), y = g.stringY[fretHighlight.s];
     const k = Math.min(age / 450, 1);
@@ -1491,9 +1692,10 @@ function clearFretHighlight() {
 
 // All fretboard positions of a pitch class in the current tuning
 function allPositionsOfPc(pc, tuning) {
+  const maxFrets = currentDisplayFrets();
   const out = [];
   for (let s = 0; s < 6; s++) {
-    for (let f = 0; f <= NUM_FRETS; f++) {
+    for (let f = 0; f <= maxFrets; f++) {
       if ((tuning[s] + f) % 12 === pc) out.push({ s, f });
     }
   }
@@ -1505,8 +1707,9 @@ const engine = new AudioEngine();
 let bpm = 70.0, doubleTime = false, meter = "4/4", swing = 50, useFlats = false;
 let playing = false, paused = false, currentStep = 0, prevHighlight = -1;
 let patterns = {}; for (const t of TRACK_INFO) patterns[t.name] = new Array(24).fill(false);
-let practiceMode = null, prerollValue = 5, beatRepeatValue = 8;
-let kickCounter = 0, prerollDone = false, currentNote = "", currentExtra = "";
+let practiceMode = null, prerollValue = 5, beatRepeatValue = 4;
+let prerollCounter = 0, maintainCycleCounter = 0, hasEnteredMaintainCycle = false;
+let prerollDone = false, currentNote = "", currentExtra = "";
 let rhythmDifficulty = 'Medium';
 let triadState = null;   // {root, quality, inv, set, shape}
 let rhythmState = null;  // {rhythm, chordRoot, chordSuffix, chordNotes}
@@ -1531,10 +1734,17 @@ const beatRepeatSlider = $('beatRepeatSlider'), beatRepeatValEl = $('beatRepeatV
 const arpVolSlider = $('arpVolSlider'), arpVolVal = $('arpVolVal');
 const tuningCombo = $('tuningCombo'), tuningNotesEl = $('tuningNotes');
 const rhythmDiffCombo = $('rhythmDiffCombo');
+const appRoot = $('appRoot'), layoutToggleBtn = $('layoutToggleBtn');
 const lockBtn = $('lockBtn');
 const arpLockBtn = $('arpLockBtn');
 const rootLockBtn = $('rootLockBtn'), rootSelect = $('rootSelect');
 const displayFrame = $('displayFrame');
+const gcalClientIdInput = $('gcalClientIdInput'), gcalCalendarInput = $('gcalCalendarInput');
+const gcalSaveBtn = $('gcalSaveBtn'), gcalSignInBtn = $('gcalSignInBtn'), gcalDisconnectBtn = $('gcalDisconnectBtn'), gcalStatus = $('gcalStatus');
+const practiceCalendarWeekBtn = $('practiceCalendarWeekBtn'), practiceCalendarMonthBtn = $('practiceCalendarMonthBtn');
+const practiceCalendarGrid = $('practiceCalendarGrid'), practiceCalendarSummary = $('practiceCalendarSummary');
+const practiceHistorySyncBtn = $('practiceHistorySyncBtn'), practiceHistoryRemoveBtn = $('practiceHistoryRemoveBtn');
+const practiceHistoryStatus = $('practiceHistoryStatus'), practiceHistoryList = $('practiceHistoryList');
 const MODE_BTNS = {
   note: $('noteModeBtn'), caged: $('cagedModeBtn'), chord: $('chordModeBtn'),
   scale: $('scaleModeBtn'), triad: $('triadModeBtn'), rhythm: $('rhythmModeBtn'),
@@ -1545,6 +1755,34 @@ function setStartButtonState(isPausedIcon) {
     ? '<span class="btn-icon">&#9208;</span><span>Pause</span>'
     : '<span class="btn-icon">&#9654;</span><span>Play</span>';
 }
+
+function refitCurrentFretLimitedContent() {
+  if (practiceMode === 'triad' && triadState) {
+    const shape = computeTriadShape(pcOf(triadState.root), triadState.quality, triadState.inv, triadState.set, TUNINGS[currentTuning]);
+    if (shape) triadState.shape = shape; else pickNewTriad();
+  }
+  if (prerollDone) updateFretboardForContent();
+}
+
+let layoutMode = 'horizontal';
+function setLayoutMode(mode) {
+  layoutMode = mode === 'vertical' ? 'vertical' : 'horizontal';
+  appRoot.classList.toggle('layout-horizontal', layoutMode === 'horizontal');
+  appRoot.classList.toggle('layout-vertical', layoutMode === 'vertical');
+  layoutToggleBtn.innerHTML = layoutMode === 'horizontal'
+    ? '<span class="btn-icon">⇅</span><span>Tall</span>'
+    : '<span class="btn-icon">⇄</span><span>Wide</span>';
+  layoutToggleBtn.title = layoutMode === 'horizontal' ? 'Switch to vertical layout' : 'Switch to horizontal layout';
+  requestAnimationFrame(() => {
+    sizeFretCanvas();
+    refitCurrentFretLimitedContent();
+    refreshOpenSectionHeights();
+    if (practiceMode === 'rhythm' && rhythmState && prerollDone) drawRhythmBar(rhythmState.rhythm, null);
+  });
+}
+layoutToggleBtn.addEventListener('click', () => {
+  setLayoutMode(layoutMode === 'horizontal' ? 'vertical' : 'horizontal');
+});
 
 function updateFlatsChip() {
   $('flatsLabel').textContent = useFlats ? 'Flats' : 'Sharps';
@@ -1613,7 +1851,8 @@ function buildGrid() {
 }
 
 // ── Highlight ──────────────────────────────────────────────────────
-function onStepUpdate(step) {
+function onStepUpdate(step, stepTime) {
+  if (step === 0) onCycleStart(stepTime);
   const n = METER_CONFIG[meter].steps;
   if (prevHighlight >= 0 && prevHighlight < n) for (const r of stepButtons) if (prevHighlight < r.length) r[prevHighlight].classList.remove('current');
   if (step >= 0 && step < n) for (const r of stepButtons) if (step < r.length) r[step].classList.add('current');
@@ -1626,8 +1865,19 @@ function clearHighlight() { for (const r of stepButtons) for (const b of r) b.cl
 
 // ── Transport ──────────────────────────────────────────────────────
 function syncEngineOwner() { engine.seqOwner = { getSixteenthDuration, swing }; engine.seqOnStep = onStepUpdate; engine.seqPatterns = patterns; }
-function startPlayback() { playing = true; engine.seqNumSteps = METER_CONFIG[meter].steps; syncEngineOwner(); engine.startSequencer(currentStep); }
-function stopPlayback() { currentStep = engine.seqStep; engine.stopSequencer(); }
+function startPlayback() {
+  markPracticeActivityStarted();
+  playing = true;
+  engine.seqNumSteps = METER_CONFIG[meter].steps;
+  syncEngineOwner();
+  engine.startSequencer(currentStep);
+}
+function stopPlayback() {
+  const wasRunning = engine.seqPlaying;
+  currentStep = engine.seqStep;
+  engine.stopSequencer();
+  if (wasRunning) markPracticeActivityStopped();
+}
 
 async function ensureAudio() {
   engine.initContext();
@@ -1794,6 +2044,7 @@ function pickNewContent() {
   else if (practiceMode === "rhythm") { pickNewRhythm(); }
   drawPracticeStaff();
   updateFretboardForContent();
+  resetMaintainCycleTracking();
 }
 function pickNewTriad() {
   const pn = getPracticeNotes();
@@ -1853,22 +2104,71 @@ function setArpLocked(v) {
 }
 arpLockBtn.addEventListener('click', () => setArpLocked(!arpLocked));
 
-// ── Beat-driven progression ────────────────────────────────────────
-function updateBeatCountdown() { const cd = $('beatCountdown'); if (!practiceMode || !prerollDone) { cd.textContent = ''; return; } cd.textContent = promptLocked ? '\u{1F512} Locked' : 'UntilNext: ' + (beatRepeatValue - kickCounter); }
+// ── Cycle-driven progression ───────────────────────────────────────
+function resetMaintainCycleTracking() {
+  maintainCycleCounter = 0;
+  hasEnteredMaintainCycle = false;
+  updateBeatCountdown();
+}
+function updateBeatCountdown() {
+  const cd = $('beatCountdown');
+  if (!practiceMode || !prerollDone) { cd.textContent = ''; return; }
+  cd.textContent = promptLocked ? '\u{1F512} Locked' : 'UntilNext: ' + Math.max(0, beatRepeatValue - maintainCycleCounter);
+}
 function onKickHit() {
-  if (!practiceMode) return; kickCounter++;
-  if (!prerollDone) { const rem = prerollValue - kickCounter; if (rem <= 0) { prerollDone = true; kickCounter = 0; pickNewContent(); } else statusDisplay.textContent = `Pre-roll: ${rem}`; updateBeatCountdown(); return; }
+  if (!practiceMode || prerollDone) return;
+  prerollCounter++;
+  const rem = prerollValue - prerollCounter;
+  if (rem <= 0) {
+    prerollDone = true;
+    prerollCounter = 0;
+    pickNewContent();
+  } else {
+    statusDisplay.textContent = `Pre-roll: ${rem}`;
+  }
+  updateBeatCountdown();
+}
+function onCycleStart(stepTime) {
+  if (!practiceMode || !prerollDone) return;
+  launchPendingArpIfNeeded(stepTime);
+
+  if (!hasEnteredMaintainCycle) {
+    hasEnteredMaintainCycle = true;
+    updateBeatCountdown();
+    return;
+  }
+
+  maintainCycleCounter++;
   if (practiceMode === "caged") {
     const half = Math.max(1, Math.floor((beatRepeatValue + 1) / 2));
-    if (kickCounter === half && !promptLocked) { currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; extraDisplay.textContent = currentExtra; drawPracticeStaff(); updateFretboardForContent(); }
-    if (kickCounter >= beatRepeatValue) { kickCounter = 0; if (!promptLocked) { currentNote = pickRoot(currentNote); currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)]; noteDisplay.textContent = currentNote; extraDisplay.textContent = currentExtra; drawPracticeStaff(); updateFretboardForContent(); } }
-  } else {
-    if (kickCounter >= beatRepeatValue) { kickCounter = 0; if (!promptLocked) pickNewContent(); }
+    if (maintainCycleCounter === half && !promptLocked) {
+      currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)];
+      extraDisplay.textContent = currentExtra;
+      drawPracticeStaff();
+      updateFretboardForContent();
+    }
+    if (maintainCycleCounter >= beatRepeatValue) {
+      maintainCycleCounter = 0;
+      if (!promptLocked) {
+        currentNote = pickRoot(currentNote);
+        currentExtra = CAGED_FORMS[Math.floor(Math.random() * CAGED_FORMS.length)];
+        noteDisplay.textContent = currentNote;
+        extraDisplay.textContent = currentExtra;
+        drawPracticeStaff();
+        updateFretboardForContent();
+      }
+    }
+  } else if (maintainCycleCounter >= beatRepeatValue) {
+    maintainCycleCounter = 0;
+    if (!promptLocked) {
+      pickNewContent();
+      hasEnteredMaintainCycle = true;
+    }
   }
   updateBeatCountdown();
 }
 function stopPractice() {
-  practiceMode = null; kickCounter = 0; prerollDone = false; currentNote = ""; currentExtra = "";
+  practiceMode = null; prerollCounter = 0; resetMaintainCycleTracking(); prerollDone = false; currentNote = ""; currentExtra = "";
   triadState = null; rhythmState = null;
   cancelArp();
   noteDisplay.textContent = ""; extraDisplay.textContent = ""; statusDisplay.textContent = ""; $('beatCountdown').textContent = "";
@@ -1885,28 +2185,31 @@ async function onMode(mode) {
   setPromptLocked(false); // switching to another mode releases the lock
   stopPlayback(); clearHighlight();
   stopPractice();
-  practiceMode = mode; kickCounter = 0; prerollDone = (prerollValue === 0); currentNote = ""; currentExtra = "";
+  practiceMode = mode; prerollCounter = 0; resetMaintainCycleTracking(); prerollDone = (prerollValue === 0); currentNote = ""; currentExtra = "";
   for (const [m, btn] of Object.entries(MODE_BTNS)) btn.classList.toggle('active', m === mode);
   displayFrame.classList.toggle('rhythm-on', mode === 'rhythm');
   if (!prerollDone) { noteDisplay.textContent = ""; extraDisplay.textContent = ""; statusDisplay.textContent = `Pre-roll: ${prerollValue}`; } else pickNewContent();
-  currentStep = 0; playing = true; paused = false; setStartButtonState(true);
-  engine.seqNumSteps = METER_CONFIG[meter].steps; syncEngineOwner(); engine.startSequencer(0);
+  currentStep = 0; paused = false; setStartButtonState(true);
+  startPlayback();
 }
 for (const [mode, btn] of Object.entries(MODE_BTNS)) btn.addEventListener('click', () => onMode(mode));
 
 // ── Arpeggio trigger (Shift+Space / swipe up / button) ─────────────
 // Map target midis onto fretboard positions: greedy nearest-to-anchor search
-function mapMidisToPositions(midis, tuning, startFret = 5) {
+function mapMidisToPositions(midis, tuning, startFret = 5, minFret = ARP_MIN_FRET, maxFret = ARP_MAX_FRET) {
   const out = [];
   let anchor = null, prevS = -1;
+  const lowMidi = tuning[0] + minFret;
+  const highMidi = tuning[5] + maxFret;
   for (let m of midis) {
-    while (m < tuning[0]) m += 12;
-    while (m > tuning[5] + NUM_FRETS) m -= 12;
+    while (m < lowMidi) m += 12;
+    while (m > highMidi) m -= 12;
     let best = null, bestScore = Infinity;
     for (let s = 0; s < 6; s++) {
       const f = m - tuning[s];
-      if (f < 0 || f > NUM_FRETS) continue;
-      let score = Math.abs(f - (anchor == null ? startFret : anchor)) + (s < prevS ? 6 : 0);
+      if (f < minFret || f > maxFret) continue;
+      const target = Math.max(minFret, Math.min(maxFret, anchor == null ? startFret : anchor));
+      let score = Math.abs(f - target) + (s < prevS ? 6 : 0);
       if (score < bestScore) { best = { s, f, midi: m }; bestScore = score; }
     }
     if (best) { if (anchor == null) anchor = best.f; prevS = best.s; out.push(best); }
@@ -1914,6 +2217,9 @@ function mapMidisToPositions(midis, tuning, startFret = 5) {
   return out;
 }
 function rootMidiForPc(pc) { return 45 + ((pc - 9 + 12) % 12); } // A2..Ab3
+function notesWithinArpRange(notes) {
+  return notes && notes.every(n => n.f >= ARP_MIN_FRET && n.f <= ARP_MAX_FRET);
+}
 
 // Build the raw pitch material (midi notes) for the current prompt, plus an
 // optional fixed fretboard "shape" (CAGED / triad) used as the canonical voicing.
@@ -1952,7 +2258,7 @@ function getArpSpec() {
 // The fixed arpeggio (original behaviour) — used when the Arp lock is engaged.
 function getArpNotes() {
   const spec = getArpSpec();
-  if (spec.canonical) return spec.canonical;
+  if (notesWithinArpRange(spec.canonical)) return spec.canonical;
   return mapMidisToPositions(spec.midis, TUNINGS[currentTuning]);
 }
 
@@ -1968,10 +2274,10 @@ function buildArpVariants() {
     if (seen.has(key)) return;
     seen.add(key); variants.push(arr);
   };
-  if (spec.canonical) push(spec.canonical);            // keep the signature shape first
+  if (notesWithinArpRange(spec.canonical)) push(spec.canonical); // keep in-range signature shapes first
   if (spec.midis && spec.midis.length) {
     for (const oct of [0, 12, -12]) {
-      for (const anchor of [5, 0, 9, 12, 3, 7]) {
+      for (const anchor of [5, 1, 9, 12, 3, 7, 15]) {
         push(mapMidisToPositions(spec.midis.map(m => m + oct), tuning, anchor));
       }
     }
@@ -1983,6 +2289,7 @@ function buildArpVariants() {
 // Without the Arp lock, repeating the trigger plays the same voicing twice
 // and then rotates to a different one, so practice isn't stuck in one spot.
 let _arpVarList = [], _arpVarKey = '', _arpVarIdx = 0, _arpVarReps = 0;
+let pendingArpLaunch = null;
 function arpContentKey() {
   let k = practiceMode + '|' + currentNote + '|' + currentExtra + '|' + currentTuning;
   if (practiceMode === 'triad' && triadState) k += '|' + triadState.root + triadState.quality + triadState.inv + triadState.set;
@@ -2006,14 +2313,52 @@ function pickArpVariant() {
   return _arpVarList[_arpVarIdx];
 }
 
+function cloneRhythm(rhythm) {
+  return rhythm ? {
+    events: rhythm.events.map(ev => ({ ...ev })),
+    totalSlots: rhythm.totalSlots,
+    cellSlots: rhythm.cellSlots,
+  } : null;
+}
+function makeArpLaunch(stopAfterPhrase) {
+  if (practiceMode === 'rhythm') {
+    if (!rhythmState) return null;
+    return {
+      type: 'rhythm',
+      rhythm: cloneRhythm(rhythmState.rhythm),
+      chordNotes: rhythmState.chordNotes.map(n => ({ ...n })),
+      stopAfterPhrase,
+    };
+  }
+  return { type: 'notes', notes: pickArpVariant().map(n => ({ ...n })), stopAfterPhrase };
+}
+function runArpLaunch(launch, stepTime = null, quantized = false) {
+  if (!launch) return 0;
+  markPracticeActivityStarted();
+  const leadIn = quantized ? 0 : 0.03;
+  const duration = launch.type === 'rhythm'
+    ? playRhythmArp(launch.rhythm, launch.chordNotes, leadIn, stepTime)
+    : playArpeggio(launch.notes, leadIn, stepTime);
+  if (launch.stopAfterPhrase) setTimeout(markPracticeActivityStopped, Math.max(0, duration) * 1000);
+  return duration;
+}
+function launchPendingArpIfNeeded(stepTime) {
+  if (!pendingArpLaunch) return;
+  const launch = pendingArpLaunch;
+  pendingArpLaunch = null;
+  runArpLaunch(launch, stepTime, true);
+}
 function triggerArp() {
   engine.initContext();
   if (!practiceMode || !prerollDone) return;
+  const launch = makeArpLaunch(!playing || paused);
+  if (!launch) return;
   const go = () => {
-    if (practiceMode === 'rhythm') {
-      if (rhythmState) playRhythmArp(rhythmState.rhythm, rhythmState.chordNotes);
+    if (playing && !paused) {
+      pendingArpLaunch = launch;
+      statusDisplay.textContent = 'Arp queued for next cycle';
     } else {
-      playArpeggio(pickArpVariant());
+      runArpLaunch(launch, null, false);
     }
   };
   // First trigger may arrive while the context is still suspended (iOS):
@@ -2022,6 +2367,548 @@ function triggerArp() {
   else go();
 }
 arpBtn.addEventListener('click', triggerArp);
+
+// ── Practice History / Google Calendar ─────────────────────────────
+const GCAL_SETTINGS_KEY = 'guitarPractice.gcalSettings.v1';
+const PRACTICE_HISTORY_KEY = 'guitarPractice.practiceHistory.v1';
+const PRACTICE_SESSION_KEY = 'guitarPractice.currentCalendarSession.v1';
+let gcalToken = null, gcalTokenExp = 0;
+let practiceHistory = [];
+let practiceCalendarSession = null;
+let practiceHistoryCreatedThisPageLoad = false;
+let practiceCalendarDisplayMode = 'week';
+let calendarStopTimer = null;
+let calendarCreatePromise = null;
+
+function setCalendarStatus(msg, cls = '') {
+  if (!gcalStatus) return;
+  gcalStatus.textContent = msg;
+  gcalStatus.className = 'calendar-status' + (cls ? ' ' + cls : '');
+}
+function setPracticeHistoryStatus(msg, cls = '') {
+  if (!practiceHistoryStatus) return;
+  practiceHistoryStatus.textContent = msg;
+  practiceHistoryStatus.className = 'calendar-status' + (cls ? ' ' + cls : '');
+}
+function loadGoogleCalendarSettings() {
+  let settings = { clientId: '', calendarName: 'primary' };
+  try {
+    settings = { ...settings, ...(JSON.parse(localStorage.getItem(GCAL_SETTINGS_KEY) || '{}')) };
+  } catch (e) {}
+  gcalClientIdInput.value = settings.clientId || '';
+  gcalCalendarInput.value = settings.calendarName || 'primary';
+  setCalendarStatus(settings.clientId ? 'Sign in with Google to enable calendar logging.' : 'Google Calendar is not connected.');
+}
+function saveGoogleCalendarSettings() {
+  const settings = {
+    clientId: gcalClientIdInput.value.trim(),
+    calendarName: gcalCalendarInput.value.trim() || 'primary',
+  };
+  localStorage.setItem(GCAL_SETTINGS_KEY, JSON.stringify(settings));
+  setCalendarStatus('Google Calendar settings saved.', 'ok');
+  return settings;
+}
+function currentGoogleCalendarSettings() {
+  return {
+    clientId: gcalClientIdInput.value.trim(),
+    calendarName: gcalCalendarInput.value.trim() || 'primary',
+  };
+}
+function loadGIS() {
+  return new Promise((resolve, reject) => {
+    if (window.google && window.google.accounts && window.google.accounts.oauth2) return resolve();
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.onload = resolve;
+    script.onerror = () => reject(new Error('Could not load the Google Identity script.'));
+    document.head.appendChild(script);
+  });
+}
+async function getGoogleToken(prompt = '') {
+  const settings = currentGoogleCalendarSettings();
+  if (!settings.clientId) throw new Error('Set the Google OAuth Client ID in Settings first.');
+  if (gcalToken && Date.now() < gcalTokenExp - 60000) return gcalToken;
+  await loadGIS();
+  return new Promise((resolve, reject) => {
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: settings.clientId,
+      scope: 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.calendarlist.readonly',
+      callback: resp => {
+        if (resp.error) return reject(new Error(resp.error_description || resp.error));
+        gcalToken = resp.access_token;
+        gcalTokenExp = Date.now() + (resp.expires_in || 3600) * 1000;
+        resolve(gcalToken);
+      },
+      error_callback: err => reject(new Error(err.type || 'Google authorization failed.')),
+    });
+    client.requestAccessToken({ prompt });
+  });
+}
+async function signInGoogleCalendar() {
+  saveGoogleCalendarSettings();
+  setCalendarStatus('Opening Google sign-in...', 'busy');
+  try {
+    await getGoogleToken('consent');
+    setCalendarStatus('Google Calendar connected.', 'ok');
+    if (practiceCalendarSession && !practiceCalendarSession.finalizedAt && !practiceCalendarSession.eventId) {
+      startCalendarCreateTask(practiceCalendarSession.id);
+    }
+  } catch (e) {
+    setCalendarStatus('Google Calendar auth failed: ' + e.message, 'err');
+  }
+}
+function disconnectGoogleCalendar() {
+  if (gcalToken && window.google && google.accounts && google.accounts.oauth2) {
+    try { google.accounts.oauth2.revoke(gcalToken, () => {}); } catch (e) {}
+  }
+  gcalToken = null;
+  gcalTokenExp = 0;
+  setCalendarStatus('Google Calendar disconnected.');
+}
+async function resolvePracticeCalendarId(token) {
+  const wanted = currentGoogleCalendarSettings().calendarName.trim() || 'primary';
+  if (wanted === 'primary' || wanted.includes('@')) return wanted;
+  const response = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=250', {
+    headers: { Authorization: 'Bearer ' + token },
+  });
+  if (!response.ok) throw new Error('Could not read calendar list (HTTP ' + response.status + ').');
+  const items = (await response.json()).items || [];
+  const hit = items.find(item => item.id === wanted) ||
+              items.find(item => (item.summary || '').toLowerCase() === wanted.toLowerCase());
+  if (!hit) throw new Error('Calendar "' + wanted + '" was not found.');
+  return hit.id;
+}
+function gcalEventBase(calendarId) {
+  return 'https://www.googleapis.com/calendar/v3/calendars/' + encodeURIComponent(calendarId) + '/events';
+}
+function gcalHeaders(token) {
+  return { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
+}
+function localDateTimeString(date) {
+  const d = date instanceof Date ? date : new Date(date);
+  const pad = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+    'T' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+}
+function calendarEventBody(session, endAt) {
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return {
+    summary: 'Guitar Practiced',
+    description: 'Guitar Practice HTML session',
+    start: { dateTime: localDateTimeString(session.startAt), timeZone: tz },
+    end: { dateTime: localDateTimeString(endAt), timeZone: tz },
+    extendedProperties: { private: { guitarPracticeSessionId: session.id } },
+  };
+}
+async function createGooglePracticeEvent(sessionId) {
+  const session = practiceCalendarSession;
+  if (!session || session.id !== sessionId || session.finalizedAt || session.eventId) return;
+  try {
+    const token = await getGoogleToken('');
+    const calendarId = await resolvePracticeCalendarId(token);
+    const response = await fetch(gcalEventBase(calendarId), {
+      method: 'POST',
+      headers: gcalHeaders(token),
+      body: JSON.stringify(calendarEventBody(session, new Date(new Date(session.startAt).getTime() + 600000))),
+    });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const created = await response.json();
+    if (!practiceCalendarSession || practiceCalendarSession.id !== sessionId || practiceCalendarSession.finalizedAt) return;
+    practiceCalendarSession.eventId = created.id;
+    practiceCalendarSession.calendarId = calendarId;
+    savePracticeCalendarSession(practiceCalendarSession);
+    updatePracticeHistoryEntry(sessionId, entry => {
+      entry.calendarId = calendarId;
+      entry.googleEventId = created.id;
+    });
+    setCalendarStatus('Google Calendar event started.', 'ok');
+    renderPracticeCalendar();
+  } catch (e) {
+    setCalendarStatus('Practice saved locally. Could not create Google Calendar event: ' + e.message, 'err');
+  }
+}
+function startCalendarCreateTask(sessionId) {
+  calendarCreatePromise = createGooglePracticeEvent(sessionId).finally(() => {
+    calendarCreatePromise = null;
+  });
+}
+async function updateGooglePracticeEventEnd(calendarId, eventId, endAt) {
+  const token = await getGoogleToken('');
+  const response = await fetch(gcalEventBase(calendarId) + '/' + encodeURIComponent(eventId), {
+    method: 'PATCH',
+    headers: gcalHeaders(token),
+    body: JSON.stringify({
+      end: {
+        dateTime: localDateTimeString(endAt),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
+    }),
+  });
+  if (!response.ok) throw new Error('HTTP ' + response.status);
+}
+async function deleteGooglePracticeEvent(calendarId, eventId) {
+  const token = await getGoogleToken('');
+  const response = await fetch(gcalEventBase(calendarId) + '/' + encodeURIComponent(eventId), {
+    method: 'DELETE',
+    headers: gcalHeaders(token),
+  });
+  if (!response.ok && response.status !== 404 && response.status !== 410) throw new Error('HTTP ' + response.status);
+}
+async function listGooglePracticeEvents() {
+  const token = await getGoogleToken('');
+  const calendarId = await resolvePracticeCalendarId(token);
+  let pageToken = null;
+  const events = [];
+  do {
+    const url = new URL(gcalEventBase(calendarId));
+    url.searchParams.set('maxResults', '2500');
+    url.searchParams.set('singleEvents', 'true');
+    url.searchParams.set('orderBy', 'startTime');
+    url.searchParams.set('timeMin', '2000-01-01T00:00:00Z');
+    url.searchParams.set('q', 'Guitar Practiced');
+    if (pageToken) url.searchParams.set('pageToken', pageToken);
+    const response = await fetch(url.toString(), { headers: { Authorization: 'Bearer ' + token } });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const payload = await response.json();
+    for (const item of payload.items || []) {
+      if (item.status === 'cancelled' || item.summary !== 'Guitar Practiced') continue;
+      const start = item.start && (item.start.dateTime || item.start.date);
+      const end = item.end && (item.end.dateTime || item.end.date);
+      if (!start) continue;
+      events.push({ eventId: item.id, calendarId, startAt: start, endAt: end || null });
+    }
+    pageToken = payload.nextPageToken || null;
+  } while (pageToken);
+  return events;
+}
+function loadPracticeHistory() {
+  try {
+    const entries = JSON.parse(localStorage.getItem(PRACTICE_HISTORY_KEY) || '[]');
+    return Array.isArray(entries) ? entries.sort((a, b) => new Date(b.startAt) - new Date(a.startAt)) : [];
+  } catch (e) {
+    return [];
+  }
+}
+function savePracticeHistory() {
+  practiceHistory.sort((a, b) => new Date(b.startAt) - new Date(a.startAt));
+  localStorage.setItem(PRACTICE_HISTORY_KEY, JSON.stringify(practiceHistory));
+}
+function upsertPracticeHistoryEntry(entry) {
+  const i = practiceHistory.findIndex(item => item.id === entry.id);
+  if (i >= 0) practiceHistory[i] = entry;
+  else practiceHistory.push(entry);
+  savePracticeHistory();
+}
+function updatePracticeHistoryEntry(id, mutate) {
+  const entry = practiceHistory.find(item => item.id === id);
+  if (!entry) return;
+  mutate(entry);
+  savePracticeHistory();
+}
+function removeLocalPracticeHistoryEntry(id) {
+  practiceHistory = practiceHistory.filter(entry => entry.id !== id);
+  savePracticeHistory();
+}
+function loadStoredPracticeCalendarSession() {
+  try { return JSON.parse(localStorage.getItem(PRACTICE_SESSION_KEY) || 'null'); }
+  catch (e) { return null; }
+}
+function savePracticeCalendarSession(session) {
+  if (!session) localStorage.removeItem(PRACTICE_SESSION_KEY);
+  else localStorage.setItem(PRACTICE_SESSION_KEY, JSON.stringify(session));
+}
+function newPracticeSessionId() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return 'local-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+}
+function markPracticeActivityStarted() {
+  if (calendarStopTimer) {
+    clearTimeout(calendarStopTimer);
+    calendarStopTimer = null;
+  }
+  if (practiceCalendarSession && !practiceCalendarSession.finalizedAt) {
+    practiceCalendarSession.stoppedAt = null;
+    savePracticeCalendarSession(practiceCalendarSession);
+    updatePracticeHistoryEntry(practiceCalendarSession.id, entry => { entry.endAt = null; });
+    renderPracticeCalendar();
+    return;
+  }
+  if (practiceHistoryCreatedThisPageLoad) {
+    setPracticeHistoryStatus('Practice history for this page launch is already closed. A new history starts after the page is fully reloaded.');
+    return;
+  }
+
+  const now = new Date().toISOString();
+  practiceCalendarSession = { id: newPracticeSessionId(), eventId: null, calendarId: null, startAt: now, stoppedAt: null, finalizedAt: null };
+  practiceHistoryCreatedThisPageLoad = true;
+  savePracticeCalendarSession(practiceCalendarSession);
+  upsertPracticeHistoryEntry({
+    id: practiceCalendarSession.id,
+    startAt: now,
+    endAt: null,
+    calendarId: null,
+    googleEventId: null,
+    source: 'local',
+  });
+  setPracticeHistoryStatus('Current practice started and saved locally.', 'ok');
+  renderPracticeCalendar();
+
+  if (!currentGoogleCalendarSettings().clientId) {
+    setCalendarStatus('Practice saved locally. Set the Google OAuth Client ID to sync Calendar events.');
+    return;
+  }
+  setCalendarStatus('Creating Google Calendar practice event...', 'busy');
+  startCalendarCreateTask(practiceCalendarSession.id);
+}
+function markPracticeActivityStopped() {
+  if (!practiceCalendarSession || practiceCalendarSession.finalizedAt) return;
+  const stoppedAt = new Date().toISOString();
+  practiceCalendarSession.stoppedAt = stoppedAt;
+  savePracticeCalendarSession(practiceCalendarSession);
+  updatePracticeHistoryEntry(practiceCalendarSession.id, entry => { entry.endAt = stoppedAt; });
+  setPracticeHistoryStatus('Current practice stop time saved locally.');
+  setCalendarStatus('Playback stopped. Calendar session closes after 10 minutes idle.');
+  renderPracticeCalendar();
+  if (calendarStopTimer) clearTimeout(calendarStopTimer);
+  calendarStopTimer = setTimeout(() => finalizePracticeCalendarSession(stoppedAt, 'idle'), 600000);
+}
+async function finalizePracticeCalendarSession(endAt, reason) {
+  if (calendarCreatePromise) await calendarCreatePromise;
+  if (!practiceCalendarSession || practiceCalendarSession.finalizedAt) return;
+  const start = new Date(practiceCalendarSession.startAt);
+  const safeEnd = new Date(Math.max(new Date(endAt).getTime(), start.getTime() + 1000)).toISOString();
+  updatePracticeHistoryEntry(practiceCalendarSession.id, entry => {
+    entry.endAt = safeEnd;
+    entry.calendarId = practiceCalendarSession.calendarId || entry.calendarId;
+    entry.googleEventId = practiceCalendarSession.eventId || entry.googleEventId;
+  });
+  if (!practiceCalendarSession.eventId && currentGoogleCalendarSettings().clientId) {
+    await createGooglePracticeEvent(practiceCalendarSession.id);
+  }
+  if (practiceCalendarSession.eventId && practiceCalendarSession.calendarId) {
+    try {
+      await updateGooglePracticeEventEnd(practiceCalendarSession.calendarId, practiceCalendarSession.eventId, safeEnd);
+      setCalendarStatus((reason === 'exit' ? 'Page exit' : 'Idle timeout') + ': Google Calendar event ended.', 'ok');
+    } catch (e) {
+      setCalendarStatus('Could not close Google Calendar event: ' + e.message, 'err');
+    }
+  } else {
+    setCalendarStatus('Practice saved locally. Google Calendar event was not available.');
+  }
+  practiceCalendarSession.stoppedAt = safeEnd;
+  practiceCalendarSession.finalizedAt = safeEnd;
+  savePracticeCalendarSession(practiceCalendarSession);
+  renderPracticeCalendar();
+}
+function finalizePracticeCalendarSessionForExit() {
+  if (!practiceCalendarSession || practiceCalendarSession.finalizedAt) return;
+  if (calendarStopTimer) clearTimeout(calendarStopTimer);
+  const endAt = practiceCalendarSession.stoppedAt || new Date().toISOString();
+  const start = new Date(practiceCalendarSession.startAt);
+  const safeEnd = new Date(Math.max(new Date(endAt).getTime(), start.getTime() + 1000)).toISOString();
+  updatePracticeHistoryEntry(practiceCalendarSession.id, entry => { entry.endAt = safeEnd; });
+  practiceCalendarSession.stoppedAt = safeEnd;
+  practiceCalendarSession.finalizedAt = safeEnd;
+  savePracticeCalendarSession(practiceCalendarSession);
+  if (gcalToken && practiceCalendarSession.eventId && practiceCalendarSession.calendarId) {
+    fetch(gcalEventBase(practiceCalendarSession.calendarId) + '/' + encodeURIComponent(practiceCalendarSession.eventId), {
+      method: 'PATCH',
+      keepalive: true,
+      headers: gcalHeaders(gcalToken),
+      body: JSON.stringify({
+        end: {
+          dateTime: localDateTimeString(safeEnd),
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
+      }),
+    }).catch(() => {});
+  }
+}
+function mergeGooglePracticeEvents(events) {
+  let imported = 0;
+  for (const ev of events) {
+    const byId = practiceHistory.find(entry => entry.googleEventId === ev.eventId);
+    if (byId) {
+      byId.calendarId = ev.calendarId;
+      byId.endAt = ev.endAt;
+      continue;
+    }
+    const byTime = practiceHistory.find(entry => {
+      if (Math.abs(new Date(entry.startAt) - new Date(ev.startAt)) >= 2000) return false;
+      if (!entry.endAt && !ev.endAt) return true;
+      if (entry.endAt && ev.endAt) return Math.abs(new Date(entry.endAt) - new Date(ev.endAt)) < 2000;
+      return false;
+    });
+    if (byTime) {
+      byTime.calendarId = ev.calendarId;
+      byTime.googleEventId = ev.eventId;
+      byTime.endAt = ev.endAt;
+      continue;
+    }
+    practiceHistory.push({
+      id: 'google-' + ev.eventId,
+      startAt: ev.startAt,
+      endAt: ev.endAt,
+      calendarId: ev.calendarId,
+      googleEventId: ev.eventId,
+      source: 'google',
+    });
+    imported++;
+  }
+  savePracticeHistory();
+  return imported;
+}
+async function syncPracticeHistoryWithGoogleCalendar() {
+  saveGoogleCalendarSettings();
+  setPracticeHistoryStatus('Syncing practice history with Google Calendar...', 'busy');
+  try {
+    const events = await listGooglePracticeEvents();
+    const imported = mergeGooglePracticeEvents(events);
+    setPracticeHistoryStatus(imported ? 'Imported ' + imported + ' practice event' + (imported === 1 ? '' : 's') + ' from Google Calendar.' : 'Practice history is already synced.', 'ok');
+    setCalendarStatus('Google Calendar history synced.', 'ok');
+    renderPracticeCalendar();
+  } catch (e) {
+    setPracticeHistoryStatus('Could not sync history: ' + e.message, 'err');
+  }
+}
+async function removeCurrentPracticeFromHistory() {
+  if (!practiceCalendarSession) {
+    setPracticeHistoryStatus('No current practice session is available to remove.');
+    return;
+  }
+  if (calendarStopTimer) {
+    clearTimeout(calendarStopTimer);
+    calendarStopTimer = null;
+  }
+  const entry = practiceHistory.find(item => item.id === practiceCalendarSession.id);
+  const calendarId = practiceCalendarSession.calendarId || (entry && entry.calendarId);
+  const eventId = practiceCalendarSession.eventId || (entry && entry.googleEventId);
+  if (calendarId && eventId) {
+    setPracticeHistoryStatus('Removing current practice from local history and Google Calendar...', 'busy');
+    try {
+      await deleteGooglePracticeEvent(calendarId, eventId);
+      removeLocalPracticeHistoryEntry(practiceCalendarSession.id);
+      practiceCalendarSession = null;
+      savePracticeCalendarSession(null);
+      setPracticeHistoryStatus('Current practice was removed from history and Google Calendar.', 'ok');
+      setCalendarStatus('Current Google Calendar practice event removed.', 'ok');
+    } catch (e) {
+      setPracticeHistoryStatus('Could not remove the Google Calendar event: ' + e.message, 'err');
+    }
+  } else {
+    removeLocalPracticeHistoryEntry(practiceCalendarSession.id);
+    practiceCalendarSession = null;
+    savePracticeCalendarSession(null);
+    setPracticeHistoryStatus('Current practice was removed from local history.', 'ok');
+  }
+  renderPracticeCalendar();
+}
+function ymd(date) {
+  const d = date instanceof Date ? date : new Date(date);
+  const pad = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+}
+function entriesOnDay(day) {
+  const key = ymd(day);
+  return practiceHistory.filter(entry => ymd(entry.startAt) === key);
+}
+function minutesForEntries(entries) {
+  return Math.round(entries.reduce((sum, entry) => {
+    const end = entry.endAt ? new Date(entry.endAt) : new Date();
+    return sum + Math.max(0, end - new Date(entry.startAt));
+  }, 0) / 60000);
+}
+function calendarDaysForMode() {
+  const today = new Date();
+  if (practiceCalendarDisplayMode === 'week') {
+    const start = new Date(today);
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - start.getDay());
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      return d;
+    });
+  }
+  const first = new Date(today.getFullYear(), today.getMonth(), 1);
+  const days = Array(first.getDay()).fill(null);
+  const last = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  for (let i = 1; i <= last; i++) days.push(new Date(today.getFullYear(), today.getMonth(), i));
+  while (days.length % 7) days.push(null);
+  return days;
+}
+function renderPracticeCalendar() {
+  if (!practiceCalendarGrid) return;
+  practiceCalendarWeekBtn.classList.toggle('active', practiceCalendarDisplayMode === 'week');
+  practiceCalendarMonthBtn.classList.toggle('active', practiceCalendarDisplayMode === 'month');
+  practiceCalendarGrid.innerHTML = '';
+  ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(label => {
+    const cell = document.createElement('div');
+    cell.className = 'calendar-weekday';
+    cell.textContent = label;
+    practiceCalendarGrid.appendChild(cell);
+  });
+  for (const day of calendarDaysForMode()) {
+    const cell = document.createElement('div');
+    if (!day) {
+      cell.className = 'calendar-day empty';
+      practiceCalendarGrid.appendChild(cell);
+      continue;
+    }
+    const entries = entriesOnDay(day);
+    const mins = minutesForEntries(entries);
+    cell.className = 'calendar-day' + (ymd(day) === ymd(new Date()) ? ' today' : '') + (entries.length ? ' has-practice' : '');
+    cell.innerHTML = '<div class="calendar-day-num">' + day.getDate() + '</div>' +
+      (entries.length ? '<div class="calendar-day-count">' + entries.length + ' session' + (entries.length === 1 ? '' : 's') + '</div><div class="calendar-day-min">' + mins + ' min</div>' : '');
+    practiceCalendarGrid.appendChild(cell);
+  }
+  const totalMin = minutesForEntries(practiceHistory);
+  practiceCalendarSummary.textContent = practiceHistory.length
+    ? practiceHistory.length + ' total practice ' + (practiceHistory.length === 1 ? 'session' : 'sessions') + ' · ' + totalMin + ' min'
+    : 'No practice history yet.';
+  practiceHistoryList.innerHTML = '';
+  if (!practiceHistory.length) {
+    const empty = document.createElement('div');
+    empty.className = 'practice-history-row';
+    empty.textContent = 'No local practice entries yet.';
+    practiceHistoryList.appendChild(empty);
+  } else {
+    for (const entry of practiceHistory) {
+      const start = new Date(entry.startAt);
+      const end = entry.endAt ? new Date(entry.endAt) : null;
+      const row = document.createElement('div');
+      row.className = 'practice-history-row';
+      row.innerHTML = '<div><div class="practice-history-date">' + start.toLocaleDateString() + '</div>' +
+        '<div class="practice-history-time">' + start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) +
+        ' - ' + (end ? end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'running') + '</div></div>' +
+        '<div class="practice-history-duration">' + Math.round(Math.max(0, (end || new Date()) - start) / 60000) + ' min</div>';
+      practiceHistoryList.appendChild(row);
+    }
+  }
+  practiceHistoryRemoveBtn.disabled = !practiceCalendarSession;
+}
+function initPracticeCalendar() {
+  loadGoogleCalendarSettings();
+  practiceHistory = loadPracticeHistory();
+  const stored = loadStoredPracticeCalendarSession();
+  if (stored && !stored.finalizedAt) {
+    practiceCalendarSession = stored;
+    practiceHistoryCreatedThisPageLoad = true;
+  } else {
+    practiceCalendarSession = null;
+    savePracticeCalendarSession(null);
+  }
+  renderPracticeCalendar();
+}
+gcalSaveBtn.addEventListener('click', saveGoogleCalendarSettings);
+gcalSignInBtn.addEventListener('click', signInGoogleCalendar);
+gcalDisconnectBtn.addEventListener('click', disconnectGoogleCalendar);
+practiceCalendarWeekBtn.addEventListener('click', () => { practiceCalendarDisplayMode = 'week'; renderPracticeCalendar(); });
+practiceCalendarMonthBtn.addEventListener('click', () => { practiceCalendarDisplayMode = 'month'; renderPracticeCalendar(); });
+practiceHistorySyncBtn.addEventListener('click', syncPracticeHistoryWithGoogleCalendar);
+practiceHistoryRemoveBtn.addEventListener('click', removeCurrentPracticeFromHistory);
+window.addEventListener('pagehide', finalizePracticeCalendarSessionForExit);
+window.addEventListener('beforeunload', finalizePracticeCalendarSessionForExit);
 
 // Space = Play/Pause the sequence (pause/resume — identical to the transport button,
 // NOT a full reset/stop).
@@ -2319,10 +3206,11 @@ cloudSaveBtn.addEventListener('click', cloudSave);
 cloudLoadBtn.addEventListener('click', () => cloudLoad(false));
 
 // ── Init ───────────────────────────────────────────────────────────
-applyDefaultPatterns(); buildGrid(); refreshPresetList(); initStaffCanvas(); buildScaleToggles(); updateFlatsChip(); setStartButtonState(false);
-updateTuningNotes(); sizeFretCanvas();
+applyDefaultPatterns(); buildGrid(); refreshPresetList(); initStaffCanvas(); buildScaleToggles(); initPracticeCalendar(); updateFlatsChip(); setStartButtonState(false);
+updateTuningNotes(); setLayoutMode('horizontal');
 window.addEventListener('resize', () => {
   sizeFretCanvas();
+  refreshOpenSectionHeights();
   if (practiceMode === 'rhythm' && rhythmState && prerollDone) drawRhythmBar(rhythmState.rhythm, null);
 });
 cloudLoad(true);
