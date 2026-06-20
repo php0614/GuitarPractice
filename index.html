@@ -17,14 +17,13 @@ body { background: #1A1A2E; color: #E0E0E0; font-family: "Helvetica Neue", Helve
   grid-template-columns: minmax(280px, 0.95fr) minmax(300px, 1fr) minmax(420px, 1.25fr);
   grid-template-areas:
     "fret fret fret"
-    "display practiceHeader sequencerHeader"
-    "display practice sequencer"
-    "scalesHeader practice sequencer"
-    "scales calendarHeader sequencer"
-    "scales calendar drums"
-    "modes calendar drums"
-    "transport calendar presetsHeader"
-    "cloudHeader calendar presets"
+    "topStack practiceHeader sequencerHeader"
+    "topStack practice sequencer"
+    "topStack practice sequencer"
+    "cloudHeader calendarHeader drums"
+    "cloud calendar drums"
+    "cloud calendar presetsHeader"
+    "cloud calendar presets"
     "cloud calendar settingsHeader"
     "cloud calendar settings";
   align-items: start;
@@ -32,10 +31,9 @@ body { background: #1A1A2E; color: #E0E0E0; font-family: "Helvetica Neue", Helve
   max-width: min(1240px, calc(100vw - 12px));
   gap: 6px;
 }
-.app.layout-horizontal .display-frame { grid-area: display; }
+.top-practice-stack { display: flex; flex-direction: column; gap: 4px; }
+.app.layout-horizontal .top-practice-stack { grid-area: topStack; gap: 2px; }
 .app.layout-horizontal .fret-panel { grid-area: fret; }
-.app.layout-horizontal .mode-row { grid-area: modes; }
-.app.layout-horizontal .transport { grid-area: transport; }
 .app.layout-horizontal [data-section="practice"] { grid-area: practiceHeader; }
 .app.layout-horizontal #practiceSection { grid-area: practice; }
 .app.layout-horizontal [data-section="sequencer"] { grid-area: sequencerHeader; }
@@ -45,23 +43,24 @@ body { background: #1A1A2E; color: #E0E0E0; font-family: "Helvetica Neue", Helve
 .app.layout-horizontal #presetsSection { grid-area: presets; }
 .app.layout-horizontal [data-section="settings"] { grid-area: settingsHeader; }
 .app.layout-horizontal #settingsSection { grid-area: settings; }
-.app.layout-horizontal [data-section="scaleToggles"] { grid-area: scalesHeader; }
-.app.layout-horizontal #scaleTogglesSection { grid-area: scales; }
 .app.layout-horizontal [data-section="practiceCalendar"] { grid-area: calendarHeader; }
 .app.layout-horizontal #practiceCalendarSection { grid-area: calendar; }
 .app.layout-horizontal [data-section="cloud"] { grid-area: cloudHeader; }
 .app.layout-horizontal #cloudSection { grid-area: cloud; }
 @media (min-width: 821px) {
   .app.layout-horizontal {
-    row-gap: 2px;
+    row-gap: 0;
     column-gap: 6px;
   }
   .app.layout-horizontal .fret-panel {
     margin-bottom: 4px;
   }
   .app.layout-horizontal .inner-section {
-    padding-top: 2px;
-    padding-bottom: 4px;
+    padding-top: 0;
+    padding-bottom: 3px;
+  }
+  .app.layout-horizontal .section-body:not(.collapsed) {
+    margin-top: -3px;
   }
   .app.layout-horizontal.presets-collapsed [data-section="settings"] {
     grid-area: presets;
@@ -114,7 +113,7 @@ body { background: #1A1A2E; color: #E0E0E0; font-family: "Helvetica Neue", Helve
 /* ── Fretboard ───────────────────────────────────── */
 .fret-panel {
   background: #12122A; border: 2px solid #333; border-radius: 12px;
-  padding: 5px; flex-shrink: 0;
+  padding: 5px; flex-shrink: 0; position: relative;
 }
 .app.layout-horizontal .fret-panel { align-self: stretch; padding: 6px; }
 #fretCanvas { width: 100%; display: block; border-radius: 6px; }
@@ -216,6 +215,17 @@ select {
 .transport-btn:active { background: #3A3A5E; }
 #arpBtn { color: #FFD700; }
 #arpBtn.flash { background: #3A2A1E; border-color: #FF6B35; }
+.transport-btn.icon-only { flex: 0.5; gap: 0; }
+#memoBtn { color: #E0E0E0; }
+#memoBtn.active { color: #FFD700; background: #3A2A1E; border-color: #FF6B35; }
+.capture-btn {
+  position: absolute; top: 10px; right: 10px; z-index: 5;
+  width: 30px; height: 30px; border-radius: 50%; padding: 0; line-height: 1;
+  background: rgba(20,20,40,0.78); color: #E0E0E0; border: 1px solid #555;
+  cursor: pointer; font-size: 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.capture-btn:active { background: rgba(58,58,94,0.9); }
 
 /* ── Drum Volumes ────────────────────────────────── */
 .drum-vol-block { display: flex; flex-direction: column; gap: 6px; padding: 8px 4px 4px; }
@@ -327,6 +337,7 @@ select {
 <body>
 <div class="app layout-horizontal" id="appRoot">
 
+  <div class="top-practice-stack">
   <!-- Practice Display (always visible) -->
   <div class="display-frame" id="displayFrame">
     <div class="display-content">
@@ -340,8 +351,47 @@ select {
     <div class="status-display" id="statusDisplay"></div>
   </div>
 
+  <!-- Mode + Transport row -->
+  <div class="mode-row">
+    <button class="mode-btn" id="noteModeBtn"><span class="btn-icon">♪</span><span>Note</span></button>
+    <button class="mode-btn" id="cagedModeBtn"><span class="btn-icon">▦</span><span>CAGED</span></button>
+    <button class="mode-btn" id="chordModeBtn"><span class="btn-icon">♬</span><span>Chord</span></button>
+    <button class="mode-btn" id="scaleModeBtn"><span class="btn-icon">↗</span><span>Scale</span></button>
+    <button class="mode-btn" id="triadModeBtn"><span class="btn-icon">△</span><span>Triad</span></button>
+    <button class="mode-btn" id="rhythmModeBtn"><span class="btn-icon">♬</span><span>Rhythm</span></button>
+  </div>
+  <div class="transport">
+    <button class="transport-btn" id="startBtn" title="Play / Pause — Space"><span class="btn-icon">&#9654;</span><span>Play</span></button>
+    <button class="transport-btn" id="stopBtn"><span class="btn-icon">&#9632;</span><span>Stop</span></button>
+    <button class="transport-btn icon-only" id="arpBtn" title="Play Guitar — Shift+Space / swipe up"><span class="btn-icon">&#9834;</span></button>
+    <button class="transport-btn icon-only" id="memoBtn" title="Memo — mark notes &amp; name the chord">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <rect x="2" y="5.4" width="11.6" height="6.2" rx="1" stroke="currentColor" stroke-width="1.1"/>
+        <line x1="4.9" y1="5.4" x2="4.9" y2="11.6" stroke="currentColor" stroke-width="0.7" opacity="0.65"/>
+        <line x1="7.8" y1="5.4" x2="7.8" y2="11.6" stroke="currentColor" stroke-width="0.7" opacity="0.65"/>
+        <line x1="10.7" y1="5.4" x2="10.7" y2="11.6" stroke="currentColor" stroke-width="0.7" opacity="0.65"/>
+        <line x1="2" y1="7.5" x2="13.6" y2="7.5" stroke="currentColor" stroke-width="0.5" opacity="0.5"/>
+        <line x1="2" y1="9.5" x2="13.6" y2="9.5" stroke="currentColor" stroke-width="0.5" opacity="0.5"/>
+        <line x1="3.1" y1="14" x2="13" y2="2.6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="3.2" cy="13.9" r="1.1" fill="currentColor"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Scale Toggles (collapsible) -->
+  <div class="section-header collapsed" data-section="scaleToggles">
+    <span class="section-title"><span class="section-icon">☑</span><span>Scale Toggles</span></span><span class="arrow">&#9660;</span>
+  </div>
+  <div class="section-body collapsed" id="scaleTogglesSection">
+    <div class="inner-section">
+      <div class="scale-toggles-grid" id="scaleTogglesGrid"></div>
+    </div>
+  </div>
+  </div>
+
   <!-- Fretboard (always visible) -->
   <div class="fret-panel" id="fretPanel">
+    <button class="capture-btn" id="captureBtn" title="Capture fretboard as transparent PNG" aria-label="Capture fretboard">&#128247;</button>
     <canvas id="fretCanvas"></canvas>
     <div class="fret-options">
       <label>Tuning:</label>
@@ -358,20 +408,6 @@ select {
     </div>
   </div>
 
-  <!-- Mode + Transport row -->
-  <div class="mode-row">
-    <button class="mode-btn" id="noteModeBtn"><span class="btn-icon">♪</span><span>Note</span></button>
-    <button class="mode-btn" id="cagedModeBtn"><span class="btn-icon">▦</span><span>CAGED</span></button>
-    <button class="mode-btn" id="chordModeBtn"><span class="btn-icon">♬</span><span>Chord</span></button>
-    <button class="mode-btn" id="scaleModeBtn"><span class="btn-icon">↗</span><span>Scale</span></button>
-    <button class="mode-btn" id="triadModeBtn"><span class="btn-icon">△</span><span>Triad</span></button>
-    <button class="mode-btn" id="rhythmModeBtn"><span class="btn-icon">♬</span><span>Rhythm</span></button>
-  </div>
-  <div class="transport">
-    <button class="transport-btn" id="startBtn" title="Play / Pause — Space"><span class="btn-icon">&#9654;</span><span>Play</span></button>
-    <button class="transport-btn" id="stopBtn"><span class="btn-icon">&#9632;</span><span>Stop</span></button>
-    <button class="transport-btn" id="arpBtn" title="Shift+Space / swipe up"><span class="btn-icon">&#9834;</span><span>Arp</span></button>
-  </div>
   <!-- Practice Settings (collapsible) -->
   <div class="section-header" data-section="practice">
     <span class="section-title"><span class="section-icon">☷</span><span>Practice Settings</span></span><span class="arrow">&#9660;</span>
@@ -507,16 +543,6 @@ select {
         <button class="cloud-btn" id="gcalDisconnectBtn">Disconnect</button>
       </div>
       <div class="calendar-status" id="gcalStatus">Google Calendar is not connected.</div>
-    </div>
-  </div>
-
-  <!-- Scale Toggles (collapsible) -->
-  <div class="section-header collapsed" data-section="scaleToggles">
-    <span class="section-title"><span class="section-icon">☑</span><span>Scale Toggles</span></span><span class="arrow">&#9660;</span>
-  </div>
-  <div class="section-body collapsed" id="scaleTogglesSection">
-    <div class="inner-section">
-      <div class="scale-toggles-grid" id="scaleTogglesGrid"></div>
     </div>
   </div>
 
@@ -662,6 +688,96 @@ function nameOfPc(pc, flats) {
   return (flats ? _CHROM_F : _CHROM_B)[((pc % 12) + 12) % 12];
 }
 function midiToFreq(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+
+// ── Chord recognition (Memo mode) ──────────────────────────────────
+// Each template: suffix, rank (lower = more common, breaks exact ties),
+// tones: interval(semitones from root, mod 12) -> importance weight (higher = worse to omit).
+// A template is rejected for a root unless it contains every played note.
+const CHORD_TEMPLATES = [
+  { suffix:"",       rank:1, tones:{0:5,4:5,7:2} },
+  { suffix:"m",      rank:2, tones:{0:5,3:5,7:2} },
+  { suffix:"7",      rank:2, tones:{0:5,4:5,7:2,10:4} },
+  { suffix:"m7",     rank:2, tones:{0:5,3:5,7:2,10:4} },
+  { suffix:"maj7",   rank:3, tones:{0:5,4:5,7:2,11:4} },
+  { suffix:"m7b5",   rank:4, tones:{0:5,3:5,6:3.5,10:4} },
+  { suffix:"6",      rank:5, tones:{0:5,4:5,7:2,9:4} },
+  { suffix:"m6",     rank:5, tones:{0:5,3:5,7:2,9:4} },
+  { suffix:"dim7",   rank:5, tones:{0:5,3:5,6:3.5,9:4} },
+  { suffix:"dim",    rank:6, tones:{0:5,3:5,6:3.5} },
+  { suffix:"aug",    rank:6, tones:{0:5,4:5,8:3.5} },
+  { suffix:"7b5",    rank:6, tones:{0:5,4:5,6:3.5,10:4} },
+  { suffix:"7#5",    rank:6, tones:{0:5,4:5,8:3.5,10:4} },
+  { suffix:"add9",   rank:5, tones:{0:5,4:5,7:2,2:3} },
+  { suffix:"m(add9)",rank:6, tones:{0:5,3:5,7:2,2:3} },
+  { suffix:"sus2",   rank:7, tones:{0:5,2:4.5,7:2} },
+  { suffix:"sus4",   rank:7, tones:{0:5,5:4.5,7:2} },
+  { suffix:"7sus4",  rank:6, tones:{0:5,5:4.5,7:2,10:4} },
+  { suffix:"mMaj7",  rank:7, tones:{0:5,3:5,7:2,11:4} },
+  { suffix:"6/9",    rank:6, tones:{0:5,4:5,7:2,9:4,2:1.5} },
+  { suffix:"9",      rank:4, tones:{0:5,4:5,7:1.5,10:4,2:3} },
+  { suffix:"maj9",   rank:5, tones:{0:5,4:5,7:1.5,11:4,2:3} },
+  { suffix:"m9",     rank:4, tones:{0:5,3:5,7:1.5,10:4,2:3} },
+  { suffix:"7b9",    rank:5, tones:{0:5,4:5,7:1.5,10:4,1:3} },
+  { suffix:"7#9",    rank:5, tones:{0:5,4:5,7:1.5,10:4,3:3} },
+  { suffix:"7#11",   rank:6, tones:{0:5,4:5,7:1.5,10:4,6:3} },
+  { suffix:"maj7#11",rank:7, tones:{0:5,4:5,7:1.5,11:4,6:3} },
+  { suffix:"m11",    rank:5, tones:{0:5,3:5,7:1.5,10:4,2:1.5,5:2.5} },
+  { suffix:"11",     rank:7, tones:{0:5,4:1.5,7:1.5,10:4,2:1.5,5:2.5} },
+  { suffix:"maj11",  rank:8, tones:{0:5,4:5,7:1.5,11:4,2:1.5,5:2.5} },
+  { suffix:"13",     rank:5, tones:{0:5,4:5,7:1.5,10:4,2:1.5,9:3.5} },
+  { suffix:"m13",    rank:6, tones:{0:5,3:5,7:1.5,10:4,2:1.5,5:1.5,9:3.5} },
+  { suffix:"maj13",  rank:7, tones:{0:5,4:5,7:1.5,11:4,2:1.5,9:3.5} },
+  { suffix:"5",      rank:9, tones:{0:5,7:3} },
+];
+// Lexicographic preference: fewest missing tones, then bass-is-root, then root present, then commonality.
+function _chordBetter(a, b) {
+  if (a.penalty !== b.penalty) return a.penalty < b.penalty;
+  if (a.bassRoot !== b.bassRoot) return a.bassRoot > b.bassRoot;
+  if (a.rootPresent !== b.rootPresent) return a.rootPresent > b.rootPresent;
+  if (a.rank !== b.rank) return a.rank < b.rank;
+  return a.r < b.r;
+}
+function noteListOfMidis(midis, flats) {
+  return midis.slice().sort((a, b) => a - b).map(m => nameOfPc(((m % 12) + 12) % 12, flats)).join(" ");
+}
+function noteDescsFromMidis(midis, flats) {
+  return midis.slice().sort((a, b) => a - b)
+    .map(m => _noteDesc(nameOfPc(((m % 12) + 12) % 12, flats), Math.floor((m - 60) / 12)))
+    .filter(Boolean);
+}
+// Most plausible chord symbol for a set of sounding MIDI notes (bass = lowest note).
+function detectChord(midis, flats) {
+  if (!midis || midis.length === 0) return "";
+  const pcs = Array.from(new Set(midis.map(m => ((m % 12) + 12) % 12)));
+  const bassPc = ((midis.reduce((a, b) => a < b ? a : b) % 12) + 12) % 12;
+  const n = pcs.length;
+  if (n === 1) return nameOfPc(pcs[0], flats);
+  if (n === 2) {
+    const sorted = midis.slice().sort((a, b) => a - b);
+    const lowPc = ((sorted[0] % 12) + 12) % 12, highPc = ((sorted[sorted.length - 1] % 12) + 12) % 12;
+    const iv = ((highPc - lowPc) + 12) % 12;
+    if (iv === 7) return nameOfPc(lowPc, flats) + "5";
+    if (iv === 5) return nameOfPc(highPc, flats) + "5";
+    return noteListOfMidis(midis, flats);
+  }
+  let best = null;
+  for (let r = 0; r < 12; r++) {
+    const present = new Set(pcs.map(pc => ((pc - r) + 12) % 12));
+    const rootPresent = present.has(0) ? 1 : 0;
+    const bassRoot = (r === bassPc) ? 1 : 0;
+    for (const T of CHORD_TEMPLATES) {
+      let ok = true;
+      for (const p of present) { if (!(p in T.tones)) { ok = false; break; } }
+      if (!ok) continue;
+      let penalty = 0;
+      for (const k in T.tones) { if (!present.has(Number(k))) penalty += T.tones[k]; }
+      const cand = { penalty, bassRoot, rootPresent, rank: T.rank, r, suffix: T.suffix };
+      if (best === null || _chordBetter(cand, best)) best = cand;
+    }
+  }
+  if (!best) return noteListOfMidis(midis, flats);
+  return nameOfPc(best.r, flats) + best.suffix;
+}
 
 // CAGED: C/G form = root,maj3rd,octave; A/E/D form = 5thBelow,root,maj3rd
 const CAGED_NOTE_INTERVALS = {
@@ -1447,8 +1563,8 @@ let _fretGeom = null;          // layout geometry
 // Deterministic pseudo-random for wood grain (stable across redraws)
 function _grainRand(seed) { let x = Math.sin(seed * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
 
-function computeFretGeometry(W, H) {
-  const maxFrets = currentDisplayFrets();
+function computeFretGeometry(W, H, maxFretsArg) {
+  const maxFrets = maxFretsArg != null ? maxFretsArg : currentDisplayFrets();
   const padT = 10, padB = 24, labelW = 26;
   const nutX = labelW + 8;
   const boardR = W - 6;
@@ -1466,20 +1582,23 @@ function noteX(g, f) {
   return (g.fretX[f - 1] + g.fretX[f]) / 2;
 }
 
-function buildFretBase(W, H, tuning) {
-  const maxFrets = currentDisplayFrets();
-  const g = computeFretGeometry(W, H);
+function buildFretBase(W, H, tuning, opts) {
+  opts = opts || {};
+  const maxFrets = opts.maxFrets != null ? opts.maxFrets : currentDisplayFrets();
+  const g = computeFretGeometry(W, H, maxFrets);
   const cv = document.createElement('canvas');
-  const dpr = window.devicePixelRatio || 1;
+  const dpr = opts.scale != null ? opts.scale : (window.devicePixelRatio || 1);
   cv.width = W * dpr; cv.height = H * dpr;
   const c = cv.getContext('2d');
   c.scale(dpr, dpr);
   const { padT, padB, nutX, boardR, fretX, stringY } = g;
   const boardTop = padT - 4, boardBot = H - padB + 8;
 
-  // Headstock side (behind labels)
-  c.fillStyle = '#0E0E22';
-  c.fillRect(0, 0, W, H);
+  // Headstock side (behind labels) — skipped for transparent capture (sticker, no app backdrop).
+  if (!opts.transparent) {
+    c.fillStyle = '#0E0E22';
+    c.fillRect(0, 0, W, H);
+  }
 
   // Rosewood board
   const wood = c.createLinearGradient(0, boardTop, 0, boardBot);
@@ -1600,6 +1719,44 @@ function sizeFretCanvas() {
   drawFretboard();
 }
 
+// Render note-marker dots onto any 2D context using the given geometry (shared by live board + capture).
+function drawFretDots(ctx, g, markers, maxFrets, baseR) {
+  for (const dot of markers) {
+    if (dot.f < 0 || dot.f > maxFrets) continue;
+    const x = noteX(g, dot.f), y = g.stringY[dot.s];
+    const r = dot.type === 'root' ? baseR : baseR * 0.88;
+    ctx.save();
+    if (dot.type === 'char') {
+      ctx.translate(x, y); ctx.rotate(Math.PI / 4);
+      ctx.fillStyle = '#00CED1';
+      ctx.fillRect(-r * 0.78, -r * 0.78, r * 1.56, r * 1.56);
+      ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 1.2;
+      ctx.strokeRect(-r * 0.78, -r * 0.78, r * 1.56, r * 1.56);
+      ctx.rotate(-Math.PI / 4);
+      ctx.fillStyle = '#062A2A';
+    } else {
+      ctx.translate(x, y);
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fillStyle = dot.type === 'root' ? '#FF6B35' : '#FFD700';
+      ctx.fill();
+      if (dot.type === 'root') {
+        ctx.strokeStyle = '#FFF'; ctx.lineWidth = 2;
+        ctx.stroke();
+      } else {
+        ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+      ctx.fillStyle = dot.type === 'root' ? '#FFF' : '#3A2A00';
+    }
+    if (dot.label) {
+      ctx.font = 'bold ' + Math.round(r * 1.05) + 'px -apple-system, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(dot.label, 0, 0.5);
+    }
+    ctx.restore();
+  }
+}
+
 function drawFretboard() {
   const dpr = window.devicePixelRatio || 1;
   const W = fretCanvas.width / dpr, H = fretCanvas.height / dpr;
@@ -1617,41 +1774,7 @@ function drawFretboard() {
   const stringGap = (g.stringY[0] - g.stringY[5]) / 5;
   const baseR = Math.min(stringGap * 0.46, 10);
 
-  for (const dot of fretMarkers) {
-    if (dot.f < 0 || dot.f > maxFrets) continue;
-    const x = noteX(g, dot.f), y = g.stringY[dot.s];
-    const r = dot.type === 'root' ? baseR : baseR * 0.88;
-    fretCtx.save();
-    if (dot.type === 'char') {
-      // Character note: cyan diamond
-      fretCtx.translate(x, y); fretCtx.rotate(Math.PI / 4);
-      fretCtx.fillStyle = '#00CED1';
-      fretCtx.fillRect(-r * 0.78, -r * 0.78, r * 1.56, r * 1.56);
-      fretCtx.strokeStyle = 'rgba(255,255,255,0.85)'; fretCtx.lineWidth = 1.2;
-      fretCtx.strokeRect(-r * 0.78, -r * 0.78, r * 1.56, r * 1.56);
-      fretCtx.rotate(-Math.PI / 4);
-      fretCtx.fillStyle = '#062A2A';
-    } else {
-      fretCtx.translate(x, y);
-      fretCtx.beginPath(); fretCtx.arc(0, 0, r, 0, Math.PI * 2);
-      fretCtx.fillStyle = dot.type === 'root' ? '#FF6B35' : '#FFD700';
-      fretCtx.fill();
-      if (dot.type === 'root') {
-        fretCtx.strokeStyle = '#FFF'; fretCtx.lineWidth = 2;
-        fretCtx.stroke();
-      } else {
-        fretCtx.strokeStyle = 'rgba(0,0,0,0.4)'; fretCtx.lineWidth = 1;
-        fretCtx.stroke();
-      }
-      fretCtx.fillStyle = dot.type === 'root' ? '#FFF' : '#3A2A00';
-    }
-    if (dot.label) {
-      fretCtx.font = 'bold ' + Math.round(r * 1.05) + 'px -apple-system, sans-serif';
-      fretCtx.textAlign = 'center'; fretCtx.textBaseline = 'middle';
-      fretCtx.fillText(dot.label, 0, 0.5);
-    }
-    fretCtx.restore();
-  }
+  drawFretDots(fretCtx, g, fretMarkers, maxFrets, baseR);
 
   // Arpeggio highlight pulse
   if (fretHighlight && fretHighlight.f >= 0 && fretHighlight.f <= maxFrets) {
@@ -1726,6 +1849,8 @@ const $ = id => document.getElementById(id);
 const bpmSpin = $('bpmSpin'), bpmSlider = $('bpmSlider'), dtCheck = $('dtCheck');
 const meterCombo = $('meterCombo'), swingSlider = $('swingSlider'), swingVal = $('swingVal');
 const gridContainer = $('gridContainer'), startBtn = $('startBtn'), stopBtn = $('stopBtn'), arpBtn = $('arpBtn');
+const memoBtn = $('memoBtn'), captureBtn = $('captureBtn');
+let memoMode = false, memoNotes = [];  // Memo mode: free-form marked notes {s, f}
 
 const presetNameEdit = $('presetNameEdit'), presetList = $('presetList');
 const noteDisplay = $('noteDisplay'), extraDisplay = $('extraDisplay'), statusDisplay = $('statusDisplay');
@@ -1866,6 +1991,7 @@ function clearHighlight() { for (const r of stepButtons) for (const b of r) b.cl
 // ── Transport ──────────────────────────────────────────────────────
 function syncEngineOwner() { engine.seqOwner = { getSixteenthDuration, swing }; engine.seqOnStep = onStepUpdate; engine.seqPatterns = patterns; }
 function startPlayback() {
+  if (memoMode) return;            // Grid Sequencer playback is disabled in Memo mode.
   markPracticeActivityStarted();
   playing = true;
   engine.seqNumSteps = METER_CONFIG[meter].steps;
@@ -1906,6 +2032,7 @@ const unlockAll = () => {
 });
 
 startBtn.addEventListener('click', async () => {
+  if (memoMode) return;   // Grid Sequencer playback is disabled in Memo mode.
   await ensureAudio();
   if (playing && !paused) { paused = true; stopPlayback(); setStartButtonState(false); }
   else if (paused) { paused = false; syncEngineOwner(); startPlayback(); setStartButtonState(true); }
@@ -1913,6 +2040,7 @@ startBtn.addEventListener('click', async () => {
 });
 stopBtn.addEventListener('click', () => {
   engine.initContext();
+  if (memoMode) { memoNotes = []; refreshMemo(); return; }   // In Memo mode, Stop clears the marked notes.
   stopPlayback(); currentStep = 0; playing = false; paused = false;
   setStartButtonState(false); clearHighlight(); stopPractice();
 });
@@ -2181,6 +2309,7 @@ function stopPractice() {
 async function onMode(mode) {
   engine.initContext(); // synchronous unlock within user gesture
   await ensureAudio();
+  if (memoMode) { setMemoMode(false); memoNotes = []; }   // choosing a practice mode leaves Memo mode
   if (practiceMode === mode) { stopPractice(); stopPlayback(); currentStep = 0; playing = false; paused = false; setStartButtonState(false); clearHighlight(); return; }
   setPromptLocked(false); // switching to another mode releases the lock
   stopPlayback(); clearHighlight();
@@ -2350,6 +2479,7 @@ function launchPendingArpIfNeeded(stepTime) {
 }
 function triggerArp() {
   engine.initContext();
+  if (memoMode) { playMemoChord(); return; }   // "Play Guitar" strums the marked chord once.
   if (!practiceMode || !prerollDone) return;
   const launch = makeArpLaunch(!playing || paused);
   if (!launch) return;
@@ -2367,6 +2497,117 @@ function triggerArp() {
   else go();
 }
 arpBtn.addEventListener('click', triggerArp);
+
+// ── Memo mode ──────────────────────────────────────────────────────
+function memoMidis() { return memoNotes.map(n => TUNINGS[currentTuning][n.s] + n.f); }
+
+function setMemoMode(on) {
+  memoMode = on;
+  memoBtn.classList.toggle('active', on);
+}
+
+function refreshMemo() {
+  const midis = memoMidis();
+  const chord = midis.length ? detectChord(midis, useFlats) : "";
+  const rootPc = midis.length ? pcOf(chord) : null;
+  const dots = memoNotes.map(n => {
+    const pc = (((TUNINGS[currentTuning][n.s] + n.f) % 12) + 12) % 12;
+    return { s: n.s, f: n.f, type: (rootPc != null && pc === rootPc) ? 'root' : 'tone', label: nameOfPc(pc, useFlats) };
+  });
+  setFretMarkers(dots);
+  drawStaffCanvas(noteDescsFromMidis(midis, useFlats), false);
+  if (!memoNotes.length) {
+    noteDisplay.textContent = "Memo";
+    extraDisplay.textContent = "Tap notes on the fretboard";
+    statusDisplay.textContent = "Memo mode";
+  } else {
+    noteDisplay.textContent = chord || "Memo";
+    extraDisplay.textContent = noteListOfMidis(midis, useFlats);
+    statusDisplay.textContent = "Memo · " + memoNotes.length + " note" + (memoNotes.length === 1 ? "" : "s");
+  }
+}
+
+function toggleMemoNote(s, f) {
+  const i = memoNotes.findIndex(n => n.s === s && n.f === f);
+  if (i >= 0) memoNotes.splice(i, 1); else memoNotes.push({ s, f });
+  refreshMemo();
+}
+
+// Map a pointer position on the fret canvas to {s, f}, or null if outside the playable area.
+function hitTestFret(clientX, clientY) {
+  const g = _fretGeom;
+  if (!g) return null;
+  const rect = fretCanvas.getBoundingClientRect();
+  if (!rect.width || !rect.height) return null;
+  const x = (clientX - rect.left) * (g.W / rect.width);
+  const y = (clientY - rect.top) * (g.H / rect.height);
+  if (x < g.nutX - 26 || x > g.boardR + 12) return null;
+  const stringGap = (g.stringY[0] - g.stringY[5]) / 5;
+  let bs = 0, bdy = Infinity;
+  for (let s = 0; s < 6; s++) { const dy = Math.abs(y - g.stringY[s]); if (dy < bdy) { bdy = dy; bs = s; } }
+  if (bdy > stringGap * 0.85) return null;
+  const maxFrets = currentDisplayFrets();
+  let bf = 0, bdx = Infinity;
+  for (let f = 0; f <= maxFrets; f++) { const dx = Math.abs(x - noteX(g, f)); if (dx < bdx) { bdx = dx; bf = f; } }
+  return { s: bs, f: bf };
+}
+
+fretCanvas.addEventListener('pointerdown', (ev) => {
+  if (!memoMode) return;
+  const hit = hitTestFret(ev.clientX, ev.clientY);
+  if (hit) { ev.preventDefault(); toggleMemoNote(hit.s, hit.f); }
+});
+
+// "Play Guitar" in Memo mode: sound every marked note simultaneously, once (no loop).
+function playMemoChord() {
+  engine.initContext();
+  if (!memoNotes.length) return;
+  const midis = memoMidis();
+  const go = () => {
+    cancelArp();
+    const t0 = (engine.ctx ? engine.ctx.currentTime : 0) + 0.03;
+    midis.forEach((m, i) => synthNote(m, t0 + i * 0.006, 1.4));
+    arpBtn.classList.add('flash');
+    _arpTimeouts.push(setTimeout(() => arpBtn.classList.remove('flash'), 250));
+  };
+  if (engine.ctx && engine.ctx.state === 'suspended') engine.ctx.resume().then(go).catch(console.error);
+  else go();
+}
+
+memoBtn.addEventListener('click', async () => {
+  engine.initContext();
+  await ensureAudio();
+  if (memoMode) {
+    setMemoMode(false);
+    memoNotes = [];
+    setFretMarkers([]);
+    drawStaffCanvas("");
+    noteDisplay.textContent = ""; extraDisplay.textContent = ""; statusDisplay.textContent = "";
+    return;
+  }
+  stopPlayback(); clearHighlight(); stopPractice();
+  currentStep = 0; playing = false; paused = false; setStartButtonState(false);
+  setMemoMode(true);
+  memoNotes = [];
+  refreshMemo();
+});
+
+// ── Capture: render the fretboard (always 22 frets) + current dots as a transparent PNG ──
+function captureFretboardPNG() {
+  const W = 1200, H = 240, scale = 3;
+  const built = buildFretBase(W, H, currentTuning, { maxFrets: LANDSCAPE_FRETS, transparent: true, scale });
+  const cv = built.canvas, g = built.geom;
+  const ctx = cv.getContext('2d');
+  const stringGap = (g.stringY[0] - g.stringY[5]) / 5;
+  const baseR = Math.min(stringGap * 0.46, 10);
+  drawFretDots(ctx, g, fretMarkers, LANDSCAPE_FRETS, baseR);
+  const stamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
+  const a = document.createElement('a');
+  a.href = cv.toDataURL('image/png');
+  a.download = 'fretboard-' + stamp + '.png';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+captureBtn.addEventListener('click', () => captureFretboardPNG());
 
 // ── Practice History / Google Calendar ─────────────────────────────
 const GCAL_SETTINGS_KEY = 'guitarPractice.gcalSettings.v1';

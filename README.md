@@ -19,7 +19,7 @@ Or deploy the folder to any static host (GitHub Pages, Netlify).
 
 The single-file HTML UI now mirrors the compact native iOS layout more closely: icon-labeled mode/transport buttons, icon-bearing collapsible headers, and a two-row practice-control strip with the Arp lock aligned on the second row.
 
-Desktop HTML starts in a horizontal layout by default. The **Tall/Wide** button in Practice Settings switches between horizontal and vertical layouts. In horizontal mode the 22-fret guitar fretboard owns the full top row; in vertical or portrait-width mode the fretboard returns to the original 15-fret range. Everything below the horizontal fretboard uses three columns: sheet visualizer plus Scale Toggles, Practice Settings plus Practice Calendar, and Sequencer plus volume sliders, Presets, and Settings. Mode and transport controls remain in the first column under Scale Toggles. Landscape dropdown spacing is compact so closed headers and opened section contents sit close together like the portrait layout.
+Desktop HTML starts in a horizontal layout by default. The **Tall/Wide** button in Practice Settings switches between horizontal and vertical layouts. In horizontal mode the 22-fret guitar fretboard owns the full top row; in vertical or portrait-width mode the fretboard returns to the original 15-fret range. Both layouts keep the sheet visualizer, Note-to-Arp button block, and Scale Toggles together at the top, with the buttons attached tightly below the score. Everything below the horizontal fretboard uses three columns: sheet visualizer plus the Note-to-Arp button block with Scale Toggles below it, Practice Settings plus Practice Calendar, and Sequencer plus volume sliders, Presets, and Settings. Landscape dropdown spacing is compact so closed headers and opened section contents sit close together like the portrait layout.
 
 ## Practice Modes
 
@@ -81,6 +81,16 @@ Google Calendar setup is the same browser OAuth pattern as FlexStructure: enable
 ## Sequencer
 
 Unchanged from before: 4 tracks (Kick/Snare/C-Hat/O-Hat), 6 meters, swing, 2x, per-track volume, presets (now also synced to the cloud). Practice prompts advance by full sequencer-grid cycles.
+
+## Memo Mode
+
+The transport **Arp** button is now an icon-only **Play Guitar** button at half width, beside a new icon-only **Memo** button (a pencil over a fretboard). **Memo** toggles Memo mode, which disables Grid Sequencer playback.
+
+In Memo mode, click/tap notes on the fretboard canvas to mark them (click again to remove; unlimited notes). Marked notes use the standard overlay dots — the detected chord root in orange, the rest in gold. As notes are marked, the score visualizer names the most plausible chord via a faithful template-matching engine (`detectChord(midis, flats)`) covering triads, 6ths, 7ths, sus/add, altered and tension chords through 13ths, preferring the complete chord over inversion / power-chord readings (low-to-high Ab F C is named **Fm**, not F5/Ab). Marked notes also render on the staff. The chord engine is identical to the iOS app's.
+
+**Play Guitar** in Memo mode strums all marked notes at once, a single time. **Stop** clears the marked notes.
+
+The camera **Capture** button at the top-right of the fretboard panel (available in every mode) exports the fretboard plus the current overlay to a **transparent PNG** (RGBA, no page background) that always renders the full **22-fret** board even in portrait, and auto-downloads it.
 
 ## Files
 

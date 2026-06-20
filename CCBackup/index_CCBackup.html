@@ -17,14 +17,13 @@ body { background: #1A1A2E; color: #E0E0E0; font-family: "Helvetica Neue", Helve
   grid-template-columns: minmax(280px, 0.95fr) minmax(300px, 1fr) minmax(420px, 1.25fr);
   grid-template-areas:
     "fret fret fret"
-    "display practiceHeader sequencerHeader"
-    "display practice sequencer"
-    "scalesHeader practice sequencer"
-    "scales calendarHeader sequencer"
-    "scales calendar drums"
-    "modes calendar drums"
-    "transport calendar presetsHeader"
-    "cloudHeader calendar presets"
+    "topStack practiceHeader sequencerHeader"
+    "topStack practice sequencer"
+    "topStack practice sequencer"
+    "cloudHeader calendarHeader drums"
+    "cloud calendar drums"
+    "cloud calendar presetsHeader"
+    "cloud calendar presets"
     "cloud calendar settingsHeader"
     "cloud calendar settings";
   align-items: start;
@@ -32,10 +31,9 @@ body { background: #1A1A2E; color: #E0E0E0; font-family: "Helvetica Neue", Helve
   max-width: min(1240px, calc(100vw - 12px));
   gap: 6px;
 }
-.app.layout-horizontal .display-frame { grid-area: display; }
+.top-practice-stack { display: flex; flex-direction: column; gap: 4px; }
+.app.layout-horizontal .top-practice-stack { grid-area: topStack; gap: 2px; }
 .app.layout-horizontal .fret-panel { grid-area: fret; }
-.app.layout-horizontal .mode-row { grid-area: modes; }
-.app.layout-horizontal .transport { grid-area: transport; }
 .app.layout-horizontal [data-section="practice"] { grid-area: practiceHeader; }
 .app.layout-horizontal #practiceSection { grid-area: practice; }
 .app.layout-horizontal [data-section="sequencer"] { grid-area: sequencerHeader; }
@@ -45,12 +43,34 @@ body { background: #1A1A2E; color: #E0E0E0; font-family: "Helvetica Neue", Helve
 .app.layout-horizontal #presetsSection { grid-area: presets; }
 .app.layout-horizontal [data-section="settings"] { grid-area: settingsHeader; }
 .app.layout-horizontal #settingsSection { grid-area: settings; }
-.app.layout-horizontal [data-section="scaleToggles"] { grid-area: scalesHeader; }
-.app.layout-horizontal #scaleTogglesSection { grid-area: scales; }
 .app.layout-horizontal [data-section="practiceCalendar"] { grid-area: calendarHeader; }
 .app.layout-horizontal #practiceCalendarSection { grid-area: calendar; }
 .app.layout-horizontal [data-section="cloud"] { grid-area: cloudHeader; }
 .app.layout-horizontal #cloudSection { grid-area: cloud; }
+@media (min-width: 821px) {
+  .app.layout-horizontal {
+    row-gap: 0;
+    column-gap: 6px;
+  }
+  .app.layout-horizontal .fret-panel {
+    margin-bottom: 4px;
+  }
+  .app.layout-horizontal .inner-section {
+    padding-top: 0;
+    padding-bottom: 3px;
+  }
+  .app.layout-horizontal .section-body:not(.collapsed) {
+    margin-top: -3px;
+  }
+  .app.layout-horizontal.presets-collapsed [data-section="settings"] {
+    grid-area: presets;
+    position: relative;
+    z-index: 1;
+  }
+  .app.layout-horizontal.presets-collapsed #settingsSection {
+    grid-area: settingsHeader;
+  }
+}
 @media (max-width: 820px) {
   .app.layout-horizontal {
     display: flex;
@@ -306,6 +326,7 @@ select {
 <body>
 <div class="app layout-horizontal" id="appRoot">
 
+  <div class="top-practice-stack">
   <!-- Practice Display (always visible) -->
   <div class="display-frame" id="displayFrame">
     <div class="display-content">
@@ -317,6 +338,32 @@ select {
     </div>
     <canvas id="rhythmCanvas"></canvas>
     <div class="status-display" id="statusDisplay"></div>
+  </div>
+
+  <!-- Mode + Transport row -->
+  <div class="mode-row">
+    <button class="mode-btn" id="noteModeBtn"><span class="btn-icon">♪</span><span>Note</span></button>
+    <button class="mode-btn" id="cagedModeBtn"><span class="btn-icon">▦</span><span>CAGED</span></button>
+    <button class="mode-btn" id="chordModeBtn"><span class="btn-icon">♬</span><span>Chord</span></button>
+    <button class="mode-btn" id="scaleModeBtn"><span class="btn-icon">↗</span><span>Scale</span></button>
+    <button class="mode-btn" id="triadModeBtn"><span class="btn-icon">△</span><span>Triad</span></button>
+    <button class="mode-btn" id="rhythmModeBtn"><span class="btn-icon">♬</span><span>Rhythm</span></button>
+  </div>
+  <div class="transport">
+    <button class="transport-btn" id="startBtn" title="Play / Pause — Space"><span class="btn-icon">&#9654;</span><span>Play</span></button>
+    <button class="transport-btn" id="stopBtn"><span class="btn-icon">&#9632;</span><span>Stop</span></button>
+    <button class="transport-btn" id="arpBtn" title="Shift+Space / swipe up"><span class="btn-icon">&#9834;</span><span>Arp</span></button>
+  </div>
+
+  <!-- Scale Toggles (collapsible) -->
+  <div class="section-header collapsed" data-section="scaleToggles">
+    <span class="section-title"><span class="section-icon">☑</span><span>Scale Toggles</span></span><span class="arrow">&#9660;</span>
+  </div>
+  <div class="section-body collapsed" id="scaleTogglesSection">
+    <div class="inner-section">
+      <div class="scale-toggles-grid" id="scaleTogglesGrid"></div>
+    </div>
+  </div>
   </div>
 
   <!-- Fretboard (always visible) -->
@@ -337,20 +384,6 @@ select {
     </div>
   </div>
 
-  <!-- Mode + Transport row -->
-  <div class="mode-row">
-    <button class="mode-btn" id="noteModeBtn"><span class="btn-icon">♪</span><span>Note</span></button>
-    <button class="mode-btn" id="cagedModeBtn"><span class="btn-icon">▦</span><span>CAGED</span></button>
-    <button class="mode-btn" id="chordModeBtn"><span class="btn-icon">♬</span><span>Chord</span></button>
-    <button class="mode-btn" id="scaleModeBtn"><span class="btn-icon">↗</span><span>Scale</span></button>
-    <button class="mode-btn" id="triadModeBtn"><span class="btn-icon">△</span><span>Triad</span></button>
-    <button class="mode-btn" id="rhythmModeBtn"><span class="btn-icon">♬</span><span>Rhythm</span></button>
-  </div>
-  <div class="transport">
-    <button class="transport-btn" id="startBtn" title="Play / Pause — Space"><span class="btn-icon">&#9654;</span><span>Play</span></button>
-    <button class="transport-btn" id="stopBtn"><span class="btn-icon">&#9632;</span><span>Stop</span></button>
-    <button class="transport-btn" id="arpBtn" title="Shift+Space / swipe up"><span class="btn-icon">&#9834;</span><span>Arp</span></button>
-  </div>
   <!-- Practice Settings (collapsible) -->
   <div class="section-header" data-section="practice">
     <span class="section-title"><span class="section-icon">☷</span><span>Practice Settings</span></span><span class="arrow">&#9660;</span>
@@ -489,16 +522,6 @@ select {
     </div>
   </div>
 
-  <!-- Scale Toggles (collapsible) -->
-  <div class="section-header collapsed" data-section="scaleToggles">
-    <span class="section-title"><span class="section-icon">☑</span><span>Scale Toggles</span></span><span class="arrow">&#9660;</span>
-  </div>
-  <div class="section-body collapsed" id="scaleTogglesSection">
-    <div class="inner-section">
-      <div class="scale-toggles-grid" id="scaleTogglesGrid"></div>
-    </div>
-  </div>
-
   <!-- Practice Calendar (collapsible) -->
   <div class="section-header collapsed" data-section="practiceCalendar">
     <span class="section-title"><span class="section-icon">◷</span><span>Practice Calendar</span></span><span class="arrow">&#9660;</span>
@@ -543,15 +566,22 @@ function refreshOpenSectionHeights() {
     el.style.maxHeight = el.scrollHeight + 260 + 'px';
   });
 }
+function syncSectionLayoutClasses() {
+  const root = document.getElementById('appRoot');
+  const presets = document.getElementById('presetsSection');
+  if (root && presets) root.classList.toggle('presets-collapsed', presets.classList.contains('collapsed'));
+}
 document.querySelectorAll('.section-header').forEach(header => {
   header.addEventListener('click', () => {
     header.classList.toggle('collapsed');
     const sectionId = header.dataset.section + 'Section';
     document.getElementById(sectionId).classList.toggle('collapsed');
+    syncSectionLayoutClasses();
     requestAnimationFrame(refreshOpenSectionHeights);
   });
 });
 // Set max-height for open sections after layout
+requestAnimationFrame(syncSectionLayoutClasses);
 requestAnimationFrame(refreshOpenSectionHeights);
 
 // ── Constants ──────────────────────────────────────────────────────
